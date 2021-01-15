@@ -1,0 +1,20 @@
+{
+  "excludes": [
+      "\\/tags\\/",
+      "\\/tag\\/",
+      "\\/search\\/",
+      "\\/labels\\/",
+      "\\/label\\/",
+      "\\/category\\/",
+      "\\/about-us$",
+      "\\/contacts$",
+      "\\/privacy-policy$",
+      "\\/terms-conditions$",
+      "\\/email-whitelisting$",
+      "\\/authors$",
+      "\\/authors\\/",
+      "\\/author\\/",
+      "\\/wp-login\\.php",
+      "\\/authors\\/"
+  ]
+}

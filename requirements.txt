@@ -1,0 +1,6 @@
+pandas
+tldextract
+beautifulsoup4
+cloudscraper
+pytest
+sklearn
