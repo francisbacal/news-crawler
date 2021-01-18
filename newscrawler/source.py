@@ -1,6 +1,9 @@
 from .helpers import catch, rand_sleep
 from .exceptions import sourceError
-import cloudscraper, requests, json
+from .seledriver import Seledriver
+import cloudscraper, requests, json, logging
+
+log = logging.getLogger("SourceLog")
 
 class Source:
   """
@@ -18,16 +21,26 @@ class Source:
     self.run()
   
   def run(self):
+    log.debug("Getting Source")
     cs = cloudscraper.create_scraper()
     # rand_sleep()
-    page = catch('None', lambda: cs.get(self.url, timeout=self.timeout))
+    get_request = catch('None', lambda: cs.get(self.url, timeout=self.timeout))
+    page = catch('None', lambda: get_request.text)
 
     if not page:
-      page = catch('None', lambda: requests.get(self.url, timeout=self.timeout))
-      # page = requests.get(self.url, timeout=self.timeout)
+      log.debug("Cloudscraper failed. Trying Requests")
+      get_request = catch('None', lambda: requests.get(self.url, timeout=self.timeout))
+      page = catch('None', lambda: get_request.text)
+    
+    if not page:
+      log.debug("Requests failed. Trying Selenium")
+      seledriver = Seledriver()
+      browser = seledriver.browser
+      browser.get(self.url)
+      page = browser.page_source
 
     if not page:
       raise sourceError(self.url, "Unable to get source page")
     
-    self.r_url = page.url
-    self.page = page.text
+    self.r_url = get_request.url
+    self.page = page

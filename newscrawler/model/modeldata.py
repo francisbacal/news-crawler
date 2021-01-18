@@ -19,8 +19,8 @@ class ModelData:
     if not data:
       raise modelError("No data to generate. e.g. 'articles', 'sections' ")
 
-    if data not in ["article", "section"] or not isinstance(data, str):
-      raise modelError("Invalid model data")
+    # if data not in ["article", "section"] or not isinstance(data, str):
+    #   raise modelError("Invalid model data")
 
     self.data = data
     self.clf = None

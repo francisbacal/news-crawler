@@ -166,4 +166,4 @@ def get_path_type(path: str, clf: type(sklearn)) -> str:
     result.loc[0] = results
     result = result.drop(['path','type'],axis=1).values
     
-    return modelData.clf.predict(result)[0]
+    return clf.predict(result)[0]

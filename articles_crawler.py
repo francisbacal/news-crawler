@@ -15,7 +15,7 @@ def get_articles(url: str) -> list:
     links = crawler.pageLinks(source.page, source.r_url)
     articles = links.getArticleLinks()
   except (crawler.commonError, crawler.sourceError) as e:
-    print(e)
+    log.error(e, exc_info=True)
     return []
   
   return articles
@@ -109,6 +109,7 @@ if __name__ == '__main__':
         if article not in result:
           result.append(article)
 
+  pprint(article)
   with open("articles_result.txt", "w") as f:
     for r in result:
       f.write(r)

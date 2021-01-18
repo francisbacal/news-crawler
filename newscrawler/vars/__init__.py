@@ -2,6 +2,8 @@
 logs = [
   'SectionCrawler',
   'ArticleCrawler',
+  'SourceLog',
+  'LinksLog',
   'TIME-LOG'
 ]
 

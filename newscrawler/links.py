@@ -5,16 +5,20 @@ from .exceptions import commonError
 from .model import Compare
 from .vars import EXCLUDED_SECTION_KEYS, SOCIAL_MEDIA_KEYS
 from .options import *
+from sklearn.datasets import clear_data_home
 from pprint import pprint
 
 
-import pandas as pd, tldextract, joblib, re
+import pandas as pd, tldextract, joblib, re, logging
+
+log = logging.getLogger('LinksLog')
 
 class pageLinks():
   """
   Get all links in a source page
   """
   def __init__(self, source: str=None, url: str=None, **kwargs):
+    clear_data_home()
     self.options = Options()
     self.options = extend_opt(self.options, kwargs)
 
@@ -203,6 +207,7 @@ class pageLinks():
     predictions = []
     for d in data:
       link_type = get_path_type(d, clf)
+      log.debug(f"{str(d)} - {str(link_type)}")
       
       if link_type == "article":
         predictions.append(d)

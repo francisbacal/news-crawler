@@ -9,6 +9,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn import preprocessing
 from sklearn import svm
 from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import clear_data_home
 
 from ..modeldata import ModelData
 from ...exceptions import *
@@ -31,6 +32,7 @@ class TrainData(ModelData):
     self.run()
 
   def run(self):
+    clear_data_home(data_home=None)
     for i in range(len(self.df)):
       features = self.extract_features(self.df['path'].loc[i], self.df['type'].loc[i])
       self.featureSet.loc[i] = features
