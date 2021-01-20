@@ -23,7 +23,7 @@ class Source:
   def run(self):
     log.debug("Getting Source")
     cs = cloudscraper.create_scraper()
-    # rand_sleep()
+    rand_sleep(2,5)
     get_request = catch('None', lambda: cs.get(self.url, timeout=self.timeout))
     page = catch('None', lambda: get_request.text)
 
@@ -32,12 +32,15 @@ class Source:
       get_request = catch('None', lambda: requests.get(self.url, timeout=self.timeout))
       page = catch('None', lambda: get_request.text)
     
-    if not page:
-      log.debug("Requests failed. Trying Selenium")
-      seledriver = Seledriver()
-      browser = seledriver.browser
-      browser.get(self.url)
-      page = browser.page_source
+    # if not page:
+    #   log.debug("Requests failed. Trying Selenium")
+    #   seledriver = Seledriver()
+    #   browser = seledriver.browser
+    #   browser.get(self.url)
+    #   page = browser.page_source
+
+    #   browser.close()
+    #   browser.quit()
 
     if not page:
       raise sourceError(self.url, "Unable to get source page")

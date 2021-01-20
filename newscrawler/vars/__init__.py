@@ -4,6 +4,10 @@ logs = [
   'ArticleCrawler',
   'SourceLog',
   'LinksLog',
+  'MultiArticle',
+  'MultiSection',
+  'WebsiteAPI',
+  'articleLinksAPI',
   'TIME-LOG'
 ]
 
@@ -39,5 +43,7 @@ EXCLUDED_SECTION_KEYS = [
       'sign in',
       'signup',
       'signin',
-      'register'
+      'register',
+      'tos',
+      'sitemap'
     ]

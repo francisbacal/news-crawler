@@ -7,7 +7,7 @@ from .vars import EXCLUDED_SECTION_KEYS, SOCIAL_MEDIA_KEYS
 from .options import *
 from sklearn.datasets import clear_data_home
 from pprint import pprint
-
+from collections import OrderedDict
 
 import pandas as pd, tldextract, joblib, re, logging
 
@@ -110,7 +110,8 @@ class pageLinks():
 
     ##CLEAN RESULT
     sections = list(self.__clean_sections(predictions))
-
+    sections = list(OrderedDict.fromkeys(sections))
+    
     return sections
 
   def __clean_sections(self, sections: list) -> list:
@@ -131,7 +132,10 @@ class pageLinks():
       #Get path or section link
       parsed_url = urlparse(section)
       path = parsed_url.path
-
+      
+      if parsed_url.query != '':
+        section = re.sub(r"\?[^?]*$", "", section)
+      
       #Get subdirectories
       filter_paths = list(filter(None, path.split("/")))
 
@@ -207,7 +211,6 @@ class pageLinks():
     predictions = []
     for d in data:
       link_type = get_path_type(d, clf)
-      log.debug(f"{str(d)} - {str(link_type)}")
       
       if link_type == "article":
         predictions.append(d)

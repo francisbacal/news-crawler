@@ -125,7 +125,6 @@ def logtime(method):
         end_time = time.time()
 
         log.debug(f"{method.__name__} finished in: {time_convert(start_time, end_time)}")
-        # print(f"{method.__name__} finished in: {time_convert(start_time, end_time)}")
 
         return result
     return log_time
@@ -147,7 +146,26 @@ def catch(default, func, handle=lambda e: e, *args, **kwargs):
         log.error(e)
         return errors[default]
 
+#---------- SPLIT LIST ----------#
+def list_split(input_list: list, number_of_split: int) -> list:
+    """
+    Splits list into number_of_split list
+    """
 
+    if not input_list:
+        return []
+
+    new_list = iter(input_list)
+
+    result = []
+    q, r = divmod(len(input_list), number_of_split)
+    
+    for _ in range(r):
+        result.append(list(islice(new_list, q+1)))
+    for _ in range(number_of_split - r):
+        result.append(list(islice(new_list, q)))
+
+    return result
 #---------- GET TYPE OF PATH METHOD ----------#
 def get_path_type(path: str, clf: type(sklearn)) -> str:
     """

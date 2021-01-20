@@ -41,11 +41,14 @@ def crawl_sections(url: str):
 def main(url):
   log.debug(f'Section Crawler Init - Crawling {url}')
   crawl_sections(url)
+  log.debug(f'Section Crawler Finished')
 
 if __name__ == '__main__':
+  
   url = "https://www.philstar.com/"
   # url = "https://www.rappler.com"
   # url = "https://www.cnn.com"
+  url = "https://www.pep.ph/"
   
   # crawl_sections(url)
   main(url)

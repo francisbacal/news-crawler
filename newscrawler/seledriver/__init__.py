@@ -65,4 +65,8 @@ class Seledriver:
     result = ''.join((random.choice(alpha_strings) for i in range(8)))
 
     return str(result)
+  
+  def wait(self, driver, wait_time):
+    wait_time = wait_time or 10
     
+    return WebDriverWait(driver, wait_time)

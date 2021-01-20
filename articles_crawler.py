@@ -101,7 +101,7 @@ if __name__ == '__main__':
   # main()
   # pprint(iter_articles)
   result = []
-  for section in sections:
+  for section in sections[0:5]:
     articles = get_articles(section)
 
     if articles:
@@ -113,4 +113,4 @@ if __name__ == '__main__':
   with open("articles_result.txt", "w") as f:
     for r in result:
       f.write(r)
-      f.('\n')
+      f.write('\n')

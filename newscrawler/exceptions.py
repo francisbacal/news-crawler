@@ -7,7 +7,7 @@ class commonError(Exception):
 class sourceError(Exception):
   def __init__(self, url: str, err_msg=None):
     self.url = url
-    self.message = f"Error occured while getting page source, {err_msg} "
+    self.message = f"Error occured while getting page source for {self.url}, {err_msg} "
     super().__init__(self.message)
 
 class modelError(Exception):
