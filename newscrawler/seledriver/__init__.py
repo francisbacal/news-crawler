@@ -5,13 +5,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+from fake_useragent import UserAgent
 
 import os, string, random
 
 class Seledriver:
-  def __init__(self, name=None, browser="chrome", headless=True, timeout=300):
+  def __init__(self, name=None, browser="chrome", headless=True, agent=False, timeout=300):
     self.name = name or self.__random_name()
     self.headless = headless
+    self.agent = agent
 
     # INSTANTIATE SELENIUM DRIVER
 
@@ -28,16 +30,11 @@ class Seledriver:
     self.browser = driver
   
   def __set_driver_options(self, headless=True, browser="chrome"):
-  
+    ua = UserAgent()
+    user_agent = ua.random
+
     if browser == "chrome":
       from selenium.webdriver.chrome.options import Options as chromeOptions
-      user_agent_list = [
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:77.0) Gecko/20100101 Firefox/77.0',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-          ]
       options = chromeOptions()
       options.add_argument('--no-sandbox')
 
@@ -49,6 +46,9 @@ class Seledriver:
       options.add_argument("--start-maximized")
       options.add_experimental_option("excludeSwitches", ["enable-automation"])
       options.add_experimental_option('useAutomationExtension', False)
+
+      if self.agent:
+        options.add_argument("user-agent="+user_agent+"")
 
     if browser == "fox":
       from selenium.webdriver.firefox.options import Options as foxOptions

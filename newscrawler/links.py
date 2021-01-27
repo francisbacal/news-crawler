@@ -18,7 +18,7 @@ class pageLinks():
   Get all links in a source page
   """
   def __init__(self, source: str=None, url: str=None, **kwargs):
-    clear_data_home()
+    # clear_data_home()
     self.options = Options()
     self.options = extend_opt(self.options, kwargs)
 
@@ -42,9 +42,10 @@ class pageLinks():
   def run(self):
     soup = BeautifulSoup(self.source, 'html.parser')
     a_blocks = soup.find_all('a', href=True)
+    ul_blocks = soup.find_all('ul')
 
     _result = [a['href'] for a in a_blocks]
-    
+  
     if not _result:
       raise commonError("No links parsed")
 
@@ -60,20 +61,28 @@ class pageLinks():
       parsed_url = urlparse(res)
       ext = tldextract.extract(res)
       main_url_parsed = urlparse(self.url)
+      main_url_ext = tldextract.extract(self.url)
       
       #check if link is same domain and skip if not
-      if parsed_url.netloc:
-        if parsed_url.netloc != main_url_parsed.netloc:
-          continue
+      if ext.domain != main_url_ext.domain and ext.domain != '':
+        continue
 
-      #check if no domain and add from source url
+      #check if @ is present at netloc
+      at_regex = re.compile(r"[@]")
+      has_at = at_regex.search(res)
+      if has_at:
+        continue
+
+      #check if no netloc and add from source url
       if parsed_url.netloc == "":
-        
         if str(res).startswith('/'):
           res = re.sub(r"^\/", "", res)
 
-        res = f"{main_url_parsed.scheme}://{main_url_parsed.netloc}/{res}"
+        res = f"http://{main_url_parsed.netloc}/{res}"
 
+      # RE PARSE URL
+      parsed_url = urlparse(res)
+      ext = tldextract.extract(res)
 
       #check if a social media link
       if ext.domain in SOCIAL_MEDIA_KEYS:
@@ -82,6 +91,14 @@ class pageLinks():
       #check if in exclusions
       if res in exclusions:
         continue
+
+      #change scheme to http for all urls
+      if parsed_url.query != '':
+        query = f"?{parsed_url.query}"
+      else:
+        query = ''
+
+      res = f"http://{parsed_url.netloc}{parsed_url.path}{query}"
 
       #check if already in list
       if res not in clean_result:
@@ -99,13 +116,22 @@ class pageLinks():
       data = links
     else:
       data = self.list
-
+    
     predictions = []
     
     for d in data:
       link_type = get_path_type(d, clf)
       
       if link_type == "section":
+        predictions.append(d)
+        continue
+      
+      # USED CASE: section url with format section.domain.ext e.g. sports.inquirer.net
+      ext = tldextract.extract(d)
+      main_url_ext = tldextract.extract(self.url)
+      parsed_d = urlparse(d)
+
+      if all([ext.subdomain != "www", ext.domain == main_url_ext.domain, parsed_d.path == ""]):
         predictions.append(d)
 
     ##CLEAN RESULT
@@ -131,6 +157,13 @@ class pageLinks():
 
       #Get path or section link
       parsed_url = urlparse(section)
+
+      if parsed_url.scheme == '':
+        section = f"http://{parsed_url.netloc}{parsed_url.path}"
+      if parsed_url.query != '':
+        section = f"{section}?{parsed_url.query}"
+
+      parsed_url = urlparse(section)
       path = parsed_url.path
       
       if parsed_url.query != '':
@@ -147,7 +180,10 @@ class pageLinks():
       else:
         clean_paths = filter_paths
 
-      if len(clean_paths) == 2:
+      if not clean_paths:
+        yield section
+        continue
+      elif len(clean_paths) == 2:
         self.__firstSubDir = clean_paths[0]
         self.__secondSubDir = clean_paths[1]
       else:

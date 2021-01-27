@@ -1,10 +1,12 @@
 from newscrawler.model.trainmodel import TrainData
 from newscrawler import commonError
 import sys
+
+
+########
+### Runs a training process to generate classifier for either section or article
 ###
-#   Runs a training process to generate classifier for either section or article
-#
-###
+########
 try:
     if sys.argv != ['']:
         argv = sys.argv

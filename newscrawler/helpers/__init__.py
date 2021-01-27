@@ -184,6 +184,8 @@ def is_today(date_input):
         return True
 
 
+#---------- URL VERIFIER ----------#
+def is_same_domain(url)
 #---------- GET TYPE OF PATH METHOD ----------#
 def get_path_type(path: str, clf: type(sklearn)) -> str:
     """

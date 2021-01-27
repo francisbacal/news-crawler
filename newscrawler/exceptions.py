@@ -17,3 +17,7 @@ class modelError(Exception):
 class trainingError(Exception):
   def __init__(self, message: str):
     super().__init__(message)
+
+class helperError(Exception):
+  def __init__(self, message: str):
+    super().__init__(message)

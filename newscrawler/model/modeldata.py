@@ -90,8 +90,9 @@ class ModelData:
     return path.count('.')
 
   def numWords(self, path):
-    if path == "/":
+    if any([not path, path == '', path == "/"]):
       return 0
+  
     #remove last slash if exists
     path = re.sub(r"\/$", "", path)
 

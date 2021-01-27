@@ -45,5 +45,21 @@ EXCLUDED_SECTION_KEYS = [
       'signin',
       'register',
       'tos',
-      'sitemap'
+      'sitemap',
+      'javascript',
+      'jobs',
+      'job opening',
+      'info',
+      'info desk',
+      'redirect',
+      'advertise',
+      'user agreement',
+      'policy',
+      'newsletter',
+      'terms and conditions',
+      'sponsor',
+      'account',
+      'legal',
+      'ccpa',
+      'glossary'
     ]

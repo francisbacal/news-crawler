@@ -50,7 +50,6 @@ def get_sections(url: str) -> list:
     
     return sections
 
-
 iter_sections = []
 def crawl_sections(url: str):
     """
@@ -73,13 +72,13 @@ def crawl_sections(url: str):
     result = iter_sections
     return result
 
-def main_threading(url_list: list, n_thread):
+def main_threading(url_list: list):
     
     log.debug("main_threading started")
     if not isinstance(url_list, list):
         raise TypeError('Invalid url_list type. Must be a list')
 
-    workers = n_thread or 3
+    workers = 3
     result = []
     with ThreadPoolExecutor(max_workers=workers) as executor:
         
@@ -98,25 +97,51 @@ def main_threading(url_list: list, n_thread):
     log.debug("Done main_threading")
     return list(chain.from_iterable(result))
 
-@crawler.logtime
-def main(url, num_process):
-    log.debug(f'Section Crawler Init - Crawling {url}')
-    
+def main_pool(url):
     initial_sections = get_sections(url)
-    sections = main_threading(initial_sections, num_process)
+    sections = main_threading(initial_sections)
+    
+    return sections
+@crawler.logtime
+def section_crawl_init(urls, num_process):
+    print('INIT')
+    log.debug(f'Section Crawler Init - Crawling {url}')
+    if not isinstance(url, list):
+        raise TypeError("Invalid url type passed to section crawler. Expecting list")
+
+    url_list = crawlet.list_split(urls, num_process)
+
+    sections = []
+    with ProcessPoolExecutor(max_workers=num_process) as executor:
+        futures = [executor.submit(main_pool, url) for url in url_list]
+
+        for future in as_completed(futures):
+            try:
+                futures.result()
+            except Exception as e:
+                raise
+            else:
+                sections.append(futures.result())
+
+    # initial_sections = get_sections(url)
+    # sections = main_threading(initial_sections, num_process)
 
     log.debug(f'Section Crawler Finished')
     return list(OrderedDict.fromkeys(sections))
 
 if __name__ == '__main__':
-    url = "https://www.pep.ph/"
+   
+
+    if not urls:
+        raise crawler.commonError("NoneType or Empty list not allowed")
 
     #declare numnber of process for article links extraction
-    NUM_PROCESS = os.cpu_count() - 1
+    process_count = os.cpu_count - 1
+    NUM_PROCESS = process_count if len(urls) > process_count  else len(urls)
 
     #run main process method
     try:
-        result = main(url, NUM_PROCESS)
+        result = section_crawl_init(urls, NUM_PROCESS)
     except crawler.sourceError as e:
         log.debug(f"Source Error: {e}")
     except Exception as e:

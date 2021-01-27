@@ -5,3 +5,5 @@ cloudscraper
 pytest
 sklearn
 selenium
+pymongo
+fake-useragent

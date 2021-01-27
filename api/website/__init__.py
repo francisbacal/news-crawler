@@ -1,7 +1,7 @@
 from newscrawler import init_log, Options, extend_opt
 from ..exceptions import websiteAPIError
-
-import requests
+from bson import json_util
+import requests,json
 
 log = init_log("WebsiteAPI")
 
@@ -12,19 +12,22 @@ class Website:
   def __init__(self, options=None, **kwargs):
 
     self.params = kwargs
-    self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/web/'
+    self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/'
     self.options = options or Options()
     self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
 
   def __raise_errors(self, response, url):
     if str(response.status_code).startswith('5'):
       if 'error' in response.json():
-        if response.json()['error']['code'] == 11000:
-          raise websiteAPIError(url, 'Duplicate Value')
-        else:
-          err_code = response.json()['error']['code']
-          err_name = response.json()['error']['name']
-          raise websiteAPIError(url, f"ERROR: {err_name} with code {err_code}")
+        try:
+          if response.json()['error']['code'] == 11000:
+            raise websiteAPIError(url, 'Duplicate Value')
+          else:
+            err_code = response.json()['error']['code']
+            err_name = response.json()['error']['name']
+            raise websiteAPIError(url, f"ERROR: {err_name} with code {err_code}")
+        except KeyError:
+          raise Exception(response.json()['error'])
       else:
         raise websiteAPIError(url, response.status_code)
     
@@ -56,12 +59,12 @@ class Website:
   
   def get(self, body={}, **kwargs):
 
-    url = self.url + "custom_query/"
+    url = self.url + "query/"
     self.options = extend_opt(self.options, kwargs)
     params = {'limit': self.options.limit}
 
     try:
-      response = requests.post(url, params=params, data=json.dumps(body), headers=self.headers)
+      response = requests.post(url, params=params, data=json.dumps(body, default=json_util.default), headers=self.headers)
 
       self.__raise_errors(response, url)
 
@@ -96,7 +99,7 @@ class Website:
 
   def counts(self, body: dict={}, **kwargs):
     self.options = extend_opt(self.options, kwargs)
-    url = self.url + "count_custom_query"
+    url = self.url + "count"
 
     try:
       response = requests.post(url, data=json.dumps(body, default=json_util.default), headers=self.headers)

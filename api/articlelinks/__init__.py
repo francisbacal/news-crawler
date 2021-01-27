@@ -29,7 +29,7 @@ class ArticleLinks():
         if str(response.status_code).startswith('4'):
             raise websiteAPIError(url, response.status_code)
     
-    def check_link(self, article_url: str), **kwargs:
+    def check_link(self, article_url: str, **kwargs):
         url = self.url + "custom_query/"
         self.options = extend_opt(self.options, kwargs)
         params = {"limit": self.options.limit}
