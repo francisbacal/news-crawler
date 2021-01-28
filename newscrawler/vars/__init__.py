@@ -8,7 +8,8 @@ logs = [
   'MultiSection',
   'WebsiteAPI',
   'articleLinksAPI',
-  'TIME-LOG'
+  'TIME-LOG',
+  'UpdateWebsite',
 ]
 
 #---------- DEFINE SOCIAL MEDIA SITES ----------#

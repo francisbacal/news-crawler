@@ -100,7 +100,10 @@ class ModelData:
     filtered_path = list(filter(None, path.split("/")))
 
     #get last dir and count words
-    last_dir = filtered_path[-1]
+    try:
+      last_dir = filtered_path[-1]
+    except IndexError:
+      return 0
 
     SEPARATORS = ["-", "_"]
 
