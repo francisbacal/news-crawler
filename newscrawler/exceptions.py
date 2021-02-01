@@ -21,3 +21,7 @@ class trainingError(Exception):
 class helperError(Exception):
   def __init__(self, message: str):
     super().__init__(message)
+
+class ArticleCrawlerError(Exception):
+  def __init__(self, message: str):
+    super().__init__(message)

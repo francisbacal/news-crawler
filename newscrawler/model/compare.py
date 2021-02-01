@@ -1,10 +1,8 @@
 class Compare:
-  """Compare objects checks for content relativity using trigram algorithm. 
-  Accepts list of string key words
+  """
+  Compare Module which checks for content relativity using trigram algorithm.
   """
   def __init__(self, words_list=[]):
-    """Accepts list of keywords
-    """
     self.inputs = words_list
     self.words = []
     self.word_trigram_count = []
@@ -50,7 +48,8 @@ class Compare:
 
 
   def eval(self, word, _callback = None):
-    """Evaluate word or phrase
+    """
+    Evaluate word or phrase
     """
     # print('\nEvaluating parameter: {}'.format(word.upper()))
     result = []

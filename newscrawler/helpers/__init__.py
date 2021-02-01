@@ -7,6 +7,7 @@ import pandas as pd, joblib, sklearn, random, time, logging, logging.config, os,
 #---------- HELPERS IMPORT ----------#
 from .url import CleanURL
 from .logging import *
+from .datechecker import DateChecker
 from .updatehelper import UpdateHelper
 
 #---------- RANDOM SLEEP ----------#
@@ -42,7 +43,9 @@ def logtime(method):
         result = method(*args, **kwargs)
         end_time = time.time()
 
+        log.debug("=======================================================")
         log.debug(f"{method.__name__} finished in: {time_convert(start_time, end_time)}")
+        log.debug("=======================================================")
 
         return result
     return log_time
@@ -85,19 +88,6 @@ def list_split(input_list: list, number_of_split: int) -> list:
 
     return result
 
-#---------- DATE CHECKER  ----------#
-def is_today(date_input):
-    today = datetime.datetime.today().date()
-
-    if not isinstance(date_input, datetime.datetime):
-        raise helperError("Method: is_today. Invalid date type. Must be an instance of datetime.datetime")
-
-    
-    if not today == date_input.date():
-        return False
-
-    else:
-        return True
 
 #---------- GET TYPE OF PATH METHOD ----------#
 def get_path_type(path: str, clf: type(sklearn)) -> str:

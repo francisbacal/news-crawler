@@ -1,7 +1,9 @@
 from newscrawler import init_log, Options, extend_opt
 from ..exceptions import websiteAPIError
 from bson import json_util
-import requests,json
+import requests,json,datetime
+
+from .schema import WebsiteSchema
 
 log = init_log("WebsiteAPI")
 
@@ -10,9 +12,8 @@ class Website:
     Class for website API
   """
   def __init__(self, options=None, **kwargs):
-
-    self.params = kwargs
-    self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/'
+    # self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/'
+    self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/web/'
     self.options = options or Options()
     self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
 
@@ -57,11 +58,17 @@ class Website:
     except Exception as e:
       raise websiteAPIError(url, e)
   
-  def get(self, body={}, **kwargs):
-
-    url = self.url + "query/"
+  def get(self, body={}, params={}, **kwargs):
+    
     self.options = extend_opt(self.options, kwargs)
-    params = {'limit': self.options.limit}
+
+    if self.options.raw_website:
+      url = "http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/query"
+    else:
+      url = self.url + "custom_query"
+
+    params['limit'] = self.options.limit
+
 
     try:
       response = requests.post(url, params=params, data=json.dumps(body, default=json_util.default), headers=self.headers)
@@ -99,7 +106,11 @@ class Website:
 
   def counts(self, body: dict={}, **kwargs):
     self.options = extend_opt(self.options, kwargs)
-    url = self.url + "count"
+
+    if self.options.raw_website:
+      url = "http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/count"
+    else:
+      url = self.url + "count"
 
     try:
       response = requests.post(url, data=json.dumps(body, default=json_util.default), headers=self.headers)
@@ -113,5 +124,3 @@ class Website:
       return result
     except Exception as e:
       raise websiteAPIError(url, f"Count error: {e}")
-  
-  

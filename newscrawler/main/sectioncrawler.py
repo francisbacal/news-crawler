@@ -32,7 +32,7 @@ def get_links(url: str) -> list:
 
         # GET ARTICLES FROM URL
         log.debug(f"Getting articles for {url}")
-        articles = get_articles(url, source)
+        articles = get_articles(url, links)
         
     except crawler.commonError as e:
         log.error(e, exc_info=True)
@@ -164,7 +164,7 @@ def section_threading(url_dict: dict, sele=False):
 
     data = {
         "website_id": url_dict['website_id'],
-        "url": url_dict['url'],
+        "url": url_dict['website_url'],
         "sections": sections,
         "articles": articles
     }
@@ -179,13 +179,13 @@ def get_home(website: dict) -> dict:
         raise crawler.commonError("Invalid parameter type for website")
 
     # GET ITEMS FROM WEBSITE PARAMETER
-    url = website['url']
+    url = website['website_url']
     website_id = website['_id']
 
     # CREATE INITIAL RETURN DATA
     data = {
         "website_id": website_id,
-        "url": url,
+        "website_url": url,
         "home_sections": None,
         "home_articles": None,
         "error": False
@@ -208,7 +208,7 @@ def get_home(website: dict) -> dict:
 
     return data
 
-def crawl_home(websites: list) -> dict:
+def section_crawl_home(websites: list) -> dict:
     """
     Crawl sections in home page by using ThreadPoolExecutor
         @params:    websites            -   a list of splitted websites from section_crawl_init
@@ -245,7 +245,7 @@ def crawl_home(websites: list) -> dict:
 
 #---------- SELENIUM/DYNAMIC METHODS ----------#
 
-def sele_crawl_home(websites: list):
+def sele_section_crawl_home(websites: list):
     """
     Crawl home page of news website using selenium
     """
@@ -256,29 +256,29 @@ def sele_crawl_home(websites: list):
     results = []
 
     for website in websites:
-        url = website['url']
+        url = website['website_url']
         data = {
             "website_id": website['_id'],
-            "url": url,
-            "sections": []
+            "website_url": url,
+            "main_sections": [],
             "articles": []
         }
 
-        #append data to result
+        # APPEND DATA TO RESULT
         results.append(data)
 
         # Open New Tab and visit url
         browser.execute_script("window.open('"+url+"')")
     
     for result in results:
-        print(f"Processing {result['url']}")
+        print(f"Processing {result['website_url']}")
         wait = seledriver.wait(browser, 5)
         for x in range(len(browser.window_handles)):
             browser.switch_to.window(browser.window_handles[x])
 
             # Clean URLS
             browser_cleanurl = crawler.CleanURL(browser.current_url)
-            result_cleanurl = crawler.CleanURL(result['url'])
+            result_cleanurl = crawler.CleanURL(result['website_url'])
 
 
             if browser_cleanurl.domain == result_cleanurl.domain:
@@ -332,7 +332,7 @@ def section_crawl_init(websites: list, num_process: int):
     
     # FIRST POOL PROCESS TO CRAWL HOME PAGE VIA REQUESTS/CLOUDSCRAPER
     with ProcessPoolExecutor(max_workers=num_process) as executor:
-        futures = [executor.submit(crawl_home, website) for website in splitted_websites]
+        futures = [executor.submit(section_crawl_home, website) for website in splitted_websites]
 
         for future in as_completed(futures):
             try:
@@ -350,13 +350,13 @@ def section_crawl_init(websites: list, num_process: int):
                     section_data = {
                         "home_sections": home_data['home_sections'],
                         "website_id": home_data['website_id'],
-                        "url": home_data['url']
+                        "website_url": home_data['website_url']
                     }
 
                     article_data = {
                         "home_articles": home_data['home_articles'],
                         "website_id": home_data['website_id'],
-                        "url": home_data['url']
+                        "website_url": home_data['website_url']
                     }
 
                     home_sections.append(section_data)
@@ -381,7 +381,7 @@ def section_crawl_init(websites: list, num_process: int):
             else:
                 data.append(future.result())
 
-    # # POOL PROCESS FOR DYNAMIC WEBSITES
+    ## POOL PROCESS FOR DYNAMIC WEBSITES
     if for_selenium:
         process_count = os.cpu_count() - 1
         num_process = math.ceil(process_count / 2)
@@ -391,7 +391,7 @@ def section_crawl_init(websites: list, num_process: int):
         splitted_sele_websites = crawler.list_split(websites, sele_process)
         
         with ProcessPoolExecutor(max_workers=sele_process) as executor:
-            futures = [executor.submit(sele_crawl_home, website) for website in splitted_sele_websites]
+            futures = [executor.submit(sele_section_crawl_home, website) for website in splitted_sele_websites]
 
             for future in as_completed(futures):
                 try:

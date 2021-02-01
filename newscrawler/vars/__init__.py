@@ -62,5 +62,6 @@ EXCLUDED_SECTION_KEYS = [
       'account',
       'legal',
       'ccpa',
-      'glossary'
+      'glossary',
+      'donate'
     ]

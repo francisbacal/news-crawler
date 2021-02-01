@@ -22,6 +22,7 @@ class Source:
   
   def run(self):
     log.debug("Getting Source")
+    # raise sourceError(self.url, "TEST FOR SELENIUM")
     cs = cloudscraper.create_scraper()
     rand_sleep(2,5)
     get_request = catch('None', lambda: cs.get(self.url, timeout=self.timeout))

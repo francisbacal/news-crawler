@@ -5,6 +5,7 @@ from itertools import islice, chain
 from collections import OrderedDict
 from api import Website
 from newscrawler import Seledriver
+from datetime import datetime ,timedelta
 import newscrawler as crawler, os
 
 log = init_log('WebsiteUpdate')
@@ -12,37 +13,48 @@ log = init_log('WebsiteUpdate')
 ##############
 ## MAIN IMPORT
 
-from newscrawler.main import get_websites, section_crawl_init
+from newscrawler.main import get_websites, get_website_count, classify_websites, crawl_init
 
 ##
 ##############
 
 if __name__ == '__main__':
-    # # QUERY TO DATABASE FOR WEBSITES
+    ## QUERY TO DATABASE FOR WEBSITES
+    
 
-    QUERY = {
-        "country_code": "SGP",
-        "alexa_rankings.local": {"$gt": 1, "$lte": 2000}
+    date_checker = crawler.DateChecker()
+    less_2_weeks = datetime.today() - timedelta(14)
+
+    # FIRST QUERY CHECK FOR MORE THAN 2 WEEKS SINCE UPDATED
+    MORE_THAN_2_WEEKS_RAW_QUERY = {
+        "country": "Singapore",
+        "created_by": "Singapore Website",
+        "date_updated": {"$lt": less_2_weeks.isoformat()}
+    }
+
+    # QUERY TO RAW WEBSITES
+    RAW_QUERY = {
+        "query": {
+            "country": "Singapore",
+            "created_by": "Singapore Website",
+            "date_updated": {"$lt": date_checker.today.isoformat()
+            }
+        },
+        "fields": {
+            "url": 1,
+            "date_updated": 1,
         }
-
-    FIELDS = {
-        "url": 1,
-        "date_updated": 1,
-        "sections": 1
     }
 
-    PAYLOAD = {
-        "query": QUERY,
-        "fields": FIELDS
-    }
+    # DEFINE PAYLOAD
+    PAYLOAD = RAW_QUERY
+    PARAMS = {}
 
-    # websites = get_websites(PAYLOAD, limit=10000)
-    websites = [
-        # {"url": "https://www.straitstimes.com", "_id": "sample_id123"},
-        # {"_id": "600845d07e8b804af10683", "url": "https://www.inquirer.net/"},
-        {"url": "https://mothership.sg/", "_id": "sample_id456"},
-        # {"url": "https://www.nasdaq.com/", "_id": "sample_id456"},
-    ]
+    # CHECK FOR WEBSITES WITH LESS THAN 2 WEEKS
+    # websites_2_weeks_count = get_website_count(MORE_THAN_2_WEEKS_RAW_QUERY, raw_website=True)
+
+    websites = get_websites(PAYLOAD, PARAMS, limit=3, raw_website=True)
+    # websites = classify_websites(_websites)
 
     if not websites:
         raise crawler.commonError("NoneType or Empty list not allowed")
@@ -55,7 +67,8 @@ if __name__ == '__main__':
     ## TODO: ADD TO DATASET SECTION AND ARTICLE FOR STRAITSTIMES
     try:
         log.debug('Starting crawler')
-        result = section_crawl_init(websites, NUM_PROCESS)
+        result = crawl_init(websites)
+
         print("\n================== RESULTS ==================")
         pprint(result)
     except Exception as e:

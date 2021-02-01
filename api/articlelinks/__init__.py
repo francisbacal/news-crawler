@@ -1,7 +1,8 @@
 from newscrawler import init_log, Options, extend_opt
-from ..exceptions import articleLinksAPIError
+from ..exceptions import articleLinksAPIError, DuplicateValue
+from bson import json_util
 
-import requests, json
+import requests, json, datetime
 
 log = init_log("articleLinksAPI")
 
@@ -11,8 +12,33 @@ class ArticleLinks():
         self.options = options or Options()
         self.options = extend_opt(self.options, kwargs)
         self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
-        self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/global-link/"
 
+        if self.options.testing:
+            self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article-test/"
+        else:
+            self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article/"
+
+    def defaul_schema(self, article_data: dict):
+        
+        try:
+            article_url = article_data['article_url']
+            website = article_data['website']
+        except KeyError:
+            raise articleLinksAPIError("Invalid article_data passed")
+
+        schema = {
+            "article_status": "Queued",
+            "article_url": article_url,
+            "website": website,
+            "date_created": datetime.datetime.today().isoformat(),
+            "date_updated": datetime.datetime.today().isoformat(),
+            "article_source_from": "Python News Crawler",
+            "created_by": "Python News Crawler",
+            "updated_by": "Python News Crawler",
+        }
+
+        return schema
+            
 
     def __raise_errors(self, response, url):
         if str(response.status_code).startswith('5'):
@@ -45,3 +71,30 @@ class ArticleLinks():
             response = requests.post(url, params=params, data=json.dumps(payload), headers=self.headers)
         except expression as identifier:
             pass
+
+    def add(self, body: dict):
+        url = self.url
+        
+        if not body or not isinstance(body, dict):
+            raise ValueError("Invalid body value")
+
+        try:
+            response = requests.post(url, data=json.dumps(body, default=json_util.default), headers=self.headers)
+        
+            if str(response.status_code).startswith('5'):
+
+                if 'error' in response.json():
+                    if response.json()['error']['code'] == 11000:
+                        raise DuplicateValue(body['article_url'])
+                    else:
+                        err_code = response.json()['error']['code']
+                        err_name = response.json()['error']['name']
+                        err_msg = f"An error occurred while adding article: {err_name} with code {err_code}"
+                    raise APIServerError(url, response.status_code, err_msg=err_msg)
+                else:
+                    raise APIServerError(url, response.status_code)
+            
+        except:
+            raise
+
+        return response.json()['data']
