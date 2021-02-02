@@ -25,3 +25,7 @@ class helperError(Exception):
 class ArticleCrawlerError(Exception):
   def __init__(self, message: str):
     super().__init__(message)
+
+class SectionCrawlerError(Exception):
+  def __init__(self, message: str):
+    super().__init__(message)

@@ -39,10 +39,6 @@ if __name__ == '__main__':
             "created_by": "Singapore Website",
             "date_updated": {"$lt": date_checker.today.isoformat()
             }
-        },
-        "fields": {
-            "url": 1,
-            "date_updated": 1,
         }
     }
 
@@ -53,8 +49,7 @@ if __name__ == '__main__':
     # CHECK FOR WEBSITES WITH LESS THAN 2 WEEKS
     # websites_2_weeks_count = get_website_count(MORE_THAN_2_WEEKS_RAW_QUERY, raw_website=True)
 
-    websites = get_websites(PAYLOAD, PARAMS, limit=3, raw_website=True)
-    # websites = classify_websites(_websites)
+    websites = get_websites(PAYLOAD, PARAMS, limit=1, raw_website=True)
 
     if not websites:
         raise crawler.commonError("NoneType or Empty list not allowed")

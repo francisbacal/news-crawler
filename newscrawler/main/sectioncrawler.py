@@ -9,6 +9,7 @@ from api import *
 from datetime import datetime
 from newscrawler.model.compare import Compare
 from .articlecrawler import get_articles
+from ..exceptions import SectionCrawlerError
 
 import newscrawler as crawler, os, math, time
 
@@ -165,12 +166,16 @@ def section_threading(url_dict: dict, sele=False):
     data = {
         "website_id": url_dict['website_id'],
         "url": url_dict['website_url'],
-        "sections": sections,
+        "country": url_dict['country'],
+        "fqdn": url_dict['fqdn'],
+        "country_code": url_dict['country_code'],
+        "main_sections": sections,
         "articles": articles
     }
+
     return data
 
-def get_home(website: dict) -> dict:
+def get_home(website: dict, raw_website=False) -> dict:
     """
     Get all sections in home page
         @params:    website         -   dict object of website from database to be crawled.
@@ -179,13 +184,20 @@ def get_home(website: dict) -> dict:
         raise crawler.commonError("Invalid parameter type for website")
 
     # GET ITEMS FROM WEBSITE PARAMETER
-    url = website['website_url']
+    if raw_website:
+        url = website['url']
+    else:
+        url = website['website_url']
+
     website_id = website['_id']
 
     # CREATE INITIAL RETURN DATA
     data = {
         "website_id": website_id,
         "website_url": url,
+        "fqdn": website['fqdn'],
+        "country": website['country'],
+        "country_code": website['country_code'],
         "home_sections": None,
         "home_articles": None,
         "error": False
@@ -219,7 +231,7 @@ def section_crawl_home(websites: list) -> dict:
 
     log.debug(f"Crawling Home Pages...")
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(get_home, website) for website in websites]
+        futures = [executor.submit(get_home, website, raw_website=True) for website in websites] # query from raw website db. Remove parameter raw_website if will query on main website db
 
         for future in as_completed(futures):
             try:
@@ -256,10 +268,13 @@ def sele_section_crawl_home(websites: list):
     results = []
 
     for website in websites:
-        url = website['website_url']
+        url = website['url']
         data = {
             "website_id": website['_id'],
             "website_url": url,
+            "fqdn": website['fqdn'],
+            "country": website['country'],
+            "country_code": website['country_code'],
             "main_sections": [],
             "articles": []
         }
@@ -293,7 +308,7 @@ def sele_section_crawl_home(websites: list):
                     articles = links.getArticleLinks()
 
                     if sections:
-                        result['sections'] = sections
+                        result['main_sections'] = sections
                     
                     if articles:
                         result['articles'] = articles
@@ -308,6 +323,90 @@ def sele_section_crawl_home(websites: list):
     browser.quit()
     return results
 
+#---------- SAVE METHOD ----------#
+def save_article_thread(article_url: str, article_website_id: str):
+    articleLinksAPI = ArticleLinks(testing=True)
+    save_data = {
+            "website": article_website_id,
+            "article_url": article_url
+            }
+
+    payload = articleLinksAPI.defaul_schema(save_data)
+    response = articleLinksAPI.add(payload)
+  
+def save_pool(section_data):
+    """
+    Thread Pool Executor method caller
+    """
+    websiteAPI = Website()
+
+    update_payload = {
+            "updated_by": "Python News Crawler"
+        }
+
+
+    for data in section_data:
+        
+        if isinstance(data['articles'], list) and data['articles']:
+
+            #UPDATE OR ADD WEBSITE IN DATABASE
+            date_created = datetime.today().isoformat()
+            date_updated = datetime.today().isoformat()
+
+            #SAVE / UPDATE DB
+            try:
+                article_website = websiteAPI.add(data, data['website_id'])
+                article_website = websiteAPI.update(data, data['website_id'], raw_website=True)
+            except DuplicateValue:
+                website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
+                article_website = websiteAPI.update(data, website_id, raw_website=False)
+                article_website = websiteAPI.update(data, data['website_id'], raw_website=True)
+            except Exception as e:
+                print(e)
+                raise
+
+            #CALL THREAD POOL MAP FOR SAVING
+            articles = data['articles']
+
+            with ThreadPoolExecutor() as executor:
+                futures = [executor.submit(save_article_thread, article, article_website['_id']) for article in articles]
+
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except api.DuplicateValue as e:
+                        log.error(e, exc_info=True)
+                        print(e)
+                        continue
+                    except Exception as e:
+                        log.error(e, exc_info=True)
+                        raise
+        else:
+            raise SectionCrawlerError("Error adding website")
+
+def save_section(section_data: dict):
+    """
+    Save the scraped articles to articles database
+    """
+
+    #SPLIT DATA LIST
+    CPU_COUNT = os.cpu_count() - 1
+    PROCESSES = CPU_COUNT if len(section_data) > CPU_COUNT else len(section_data)
+
+    splitted_sections = crawler.list_split(section_data, PROCESSES)
+
+    #CALL MULTIPROCESSING METHOD
+    with ProcessPoolExecutor(max_workers=PROCESSES) as executor:
+        futures = [executor.submit(save_pool, section) for section in splitted_sections]
+
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                log.error(e, exc_info=True)
+                return "Error"
+    
+    return "SAVED"
 
 #---------- INIT METHOD ----------#
 @crawler.logtime
@@ -350,7 +449,10 @@ def section_crawl_init(websites: list, num_process: int):
                     section_data = {
                         "home_sections": home_data['home_sections'],
                         "website_id": home_data['website_id'],
-                        "website_url": home_data['website_url']
+                        "website_url": home_data['website_url'],
+                        "fqdn": home_data['fqdn'],
+                        "country": home_data['country'],
+                        "country_code": home_data['country_code'],
                     }
 
                     article_data = {

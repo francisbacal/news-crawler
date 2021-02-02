@@ -41,6 +41,10 @@ class pageLinks():
 
   def run(self):
     soup = BeautifulSoup(self.source, 'html.parser')
+    title = soup.title.string
+
+    is_en = self.__language(title)
+
     a_blocks = soup.find_all('a', href=True)
     ul_blocks = soup.find_all('ul')
 
@@ -48,8 +52,12 @@ class pageLinks():
   
     if not _result:
       raise commonError("No links parsed")
-
+    
+    # if is_en:
     self.list = self.__clean_list(_result)
+
+    # else:
+    #   raise commonError("Can not decode website text")
 
   def __clean_list(self, result: list):
     clean_result = []
@@ -330,4 +338,24 @@ class pageLinks():
             yield article
       else:
         yield article
+
+  def __language(self, title: str):
+    """
+    Detect website langauge of website based on title
+      @params:  url       -   Url of website to detect
+    """
+    # TODO: USE MORE LANGUAGE DETECTOR ALGO/LIBRARY
+    # CAN TRY TO USE POLYGLOT LIBRARY
+
+
+    #CHECK IF ENGLISH ASCII
+    #CHECK LANGUAGE
+    try:
+      title.encode('utf-8').decode('ascii')
+    except UnicodeDecodeError:
+        self.lang = catch('None', lambda: detect(title))
+        return False
+    else:
+        self.lang = catch('None', lambda: detect(title))
+        return True
 

@@ -86,10 +86,6 @@ def crawl_init(websites: list):
             else:
                 pass
 
-    pprint(for_section_update)
-    pprint(for_article_update)
-    return False
-
     # DEFINE NUMBER OF PROCESS
     process_count = os.cpu_count() - 1
     NUM_PROCESSES = process_count if len(websites) > process_count  else len(websites)
@@ -98,13 +94,14 @@ def crawl_init(websites: list):
     if for_section_update:
         section_crawl_results = section_crawl_init(for_section_update, NUM_PROCESSES)
 
+        # UPDATE WEBSITE AND SAVE ARTICLES
+        section_save = save_section(section_crawl_results)
 
-    # GET ARTICLES FOR EACH SECTIONS
-    # if for_article_update:
-    #     article_crawl_results = article_crawl_init(websites, NUM_PROCESSES)
+    # GET ARTICLES FOR ARTICLE ONLY PARSING
+    if for_article_update:
+        article_crawl_results = article_crawl_init(websites, NUM_PROCESSES)
 
-    
-    # ADD ARTICLES IN DATABASE
-    result = save_articles(article_crawl_results)
+        # ADD ARTICLES IN DATABASE
+        section_save = save_articles(article_crawl_results)
 
-    return result
+    return "DONE"

@@ -39,7 +39,13 @@ class ArticleLinks():
 
         return schema
             
+    def delete_test(self, _id):
+        url = f"http://192.168.3.143:4040/mmi-endpoints/v0/article-test/{_id}"
 
+        res = requests.delete(url,headers=self.headers)
+
+        return res.json()['data']
+        
     def __raise_errors(self, response, url):
         if str(response.status_code).startswith('5'):
             if 'error' in response.json():
@@ -71,7 +77,27 @@ class ArticleLinks():
             response = requests.post(url, params=params, data=json.dumps(payload), headers=self.headers)
         except expression as identifier:
             pass
+    
+    def get(self, body={}, params={}, **kwargs):
+    
+        self.options = extend_opt(self.options, kwargs)
 
+        url = self.url + "custom_query"
+
+        params['limit'] = self.options.limit
+
+        try:
+            response = requests.post(url, params=params, data=json.dumps(body, default=json_util.default), headers=self.headers)
+
+            self.__raise_errors(response, url)
+
+            result = response.json()['data']
+
+            return result
+
+        except Exception as e:
+            raise articleLinksAPIError(url, e)
+    
     def add(self, body: dict):
         url = self.url
         
