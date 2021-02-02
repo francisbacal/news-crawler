@@ -325,7 +325,7 @@ def sele_section_crawl_home(websites: list):
 
 #---------- SAVE METHOD ----------#
 def save_article_thread(article_url: str, article_website_id: str):
-    articleLinksAPI = ArticleLinks(testing=True)
+    articleLinksAPI = ArticleLinks(testing=False)
     save_data = {
             "website": article_website_id,
             "article_url": article_url
