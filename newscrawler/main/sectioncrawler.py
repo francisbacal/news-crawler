@@ -17,7 +17,7 @@ log = init_log('MultiSection')
 websiteAPI = Website()
 
 
-def get_links(url: str) -> list:
+def get_links(url: str, home_url: str=None) -> list:
     """
     Main function to get sections and articles
         @params:    url         -   website url
@@ -26,8 +26,14 @@ def get_links(url: str) -> list:
     try:
         # GET SOURCE AND LINKS FROM URL
         source = crawler.Source(url)
-        links = crawler.pageLinks(source.page, source.r_url)
 
+        #VALIDATE source.page
+        source_page = crawler.catch('None', lambda: source.page)
+        if not source_page:
+            raise crawler.sourceError('No source parsed')
+
+        links = crawler.pageLinks(source_page, source.r_url, home_url)
+        
         # GET SECTIONS FROM URL
         sections = links.getSectionLinks()
 
@@ -37,7 +43,7 @@ def get_links(url: str) -> list:
         
     except crawler.commonError as e:
         log.error(e, exc_info=True)
-        print(e)
+        print(e, url)
         data = {"sections": [], "articles": []}
         return data
 
@@ -53,26 +59,26 @@ def get_links(url: str) -> list:
         "sections": sections,
         "articles": articles
     }
-
+    
     return data
 
 
 #---------- STATIC METHODS ----------#
 
-def crawl_sections(url: str, iter_items: dict, repeat: int=2, iteration: int=1):
+def crawl_sections(url: str, home_url: str, iter_items: dict, repeat: int=2, iteration: int=1):
     """
     Recursive function to get all section links
         @params:    url         -       site url to crawl
         @params:    reapeat     -       no. of recursive times [default = 2]
     """
     log.debug(f"Crawling {url} Recursively")
-
+    
     current_iteration = iteration
     iter_sections = iter_items['iter_sections']
     iter_articles = iter_items['iter_articles']
 
     try:
-        links = get_links(url)
+        links = get_links(url, home_url)
         sections = links['sections']
         articles = links['articles']
 
@@ -105,7 +111,7 @@ def crawl_sections(url: str, iter_items: dict, repeat: int=2, iteration: int=1):
                     }
 
                     log.debug(f"crawling section {section}")
-                    crawl_result = crawl_sections(section, iter_items_data, iteration=current_iteration)
+                    crawl_result = crawl_sections(section, home_url, iter_items_data, iteration=current_iteration)
 
                     # EXTEND RESULTS AGAIN
                     iter_sections.extend(crawl_result['sections'])
@@ -132,7 +138,7 @@ def section_threading(url_dict: dict, sele=False):
 
     if not isinstance(url_dict, dict):
         raise crawler.commonError("Input must be a dict")
-
+    
     _sections = url_dict['home_sections']
     sections = _sections
     articles = []
@@ -143,7 +149,7 @@ def section_threading(url_dict: dict, sele=False):
     }
 
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(crawl_sections, section, iter_items, iteration=1) for section in _sections]
+        futures = [executor.submit(crawl_sections, section, url_dict['website_url'], iter_items, iteration=1) for section in _sections]
 
         for future in as_completed(futures):
             try:
@@ -207,7 +213,7 @@ def get_home(website: dict, raw_website=False) -> dict:
 
     # GET LINKS
     try:
-        links = get_links(url)
+        links = get_links(url, url)
 
         data['home_sections'] = links['sections']
         data['home_articles'] = links['articles']
@@ -323,6 +329,7 @@ def sele_section_crawl_home(websites: list):
     browser.quit()
     return results
 
+
 #---------- SAVE METHOD ----------#
 def save_article_thread(article_url: str, article_website_id: str):
     articleLinksAPI = ArticleLinks(testing=False)
@@ -330,7 +337,6 @@ def save_article_thread(article_url: str, article_website_id: str):
             "website": article_website_id,
             "article_url": article_url
             }
-
     payload = articleLinksAPI.defaul_schema(save_data)
     response = articleLinksAPI.add(payload)
   
@@ -340,49 +346,41 @@ def save_pool(section_data):
     """
     websiteAPI = Website()
 
-    update_payload = {
-            "updated_by": "Python News Crawler"
-        }
-
-
     for data in section_data:
-        
-        if isinstance(data['articles'], list) and data['articles']:
 
-            #UPDATE OR ADD WEBSITE IN DATABASE
-            date_created = datetime.today().isoformat()
-            date_updated = datetime.today().isoformat()
+        #UPDATE OR ADD WEBSITE IN DATABASE
+        date_created = datetime.today().isoformat()
+        date_updated = datetime.today().isoformat()
 
-            #SAVE / UPDATE DB
-            try:
-                article_website = websiteAPI.add(data, data['website_id'])
-                article_website = websiteAPI.update(data, data['website_id'], raw_website=True)
-            except DuplicateValue:
-                website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
-                article_website = websiteAPI.update(data, website_id, raw_website=False)
-                article_website = websiteAPI.update(data, data['website_id'], raw_website=True)
-            except Exception as e:
-                print(e)
-                raise
+        #SAVE / UPDATE DB
+        try:
+            article_website = websiteAPI.add(data, data['website_id'])
+            websiteAPI.update({}, data['website_id'], raw_website=True)
+        except DuplicateValue:
+            website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
+            article_website = websiteAPI.update(data, website_id, raw_website=False)
+            websiteAPI.update({}, data['website_id'], raw_website=True)
+        except Exception as e:
+            print(e)
+            raise
 
-            #CALL THREAD POOL MAP FOR SAVING
-            articles = data['articles']
+        #CALL THREAD POOL MAP FOR SAVING
+        articles = data['articles']
 
+        if articles:
             with ThreadPoolExecutor() as executor:
                 futures = [executor.submit(save_article_thread, article, article_website['_id']) for article in articles]
 
                 for future in as_completed(futures):
                     try:
                         future.result()
-                    except api.DuplicateValue as e:
+                    except DuplicateValue as e:
                         log.error(e, exc_info=True)
                         print(e)
                         continue
                     except Exception as e:
                         log.error(e, exc_info=True)
                         raise
-        else:
-            raise SectionCrawlerError("Error adding website")
 
 def save_section(section_data: dict):
     """

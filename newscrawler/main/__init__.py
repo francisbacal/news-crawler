@@ -93,7 +93,7 @@ def crawl_init(websites: list):
     # GET SECTIONS FOR NO SECTION WEBSITES
     if for_section_update:
         section_crawl_results = section_crawl_init(for_section_update, NUM_PROCESSES)
-
+    
         # UPDATE WEBSITE AND SAVE ARTICLES
         section_save = save_section(section_crawl_results)
 

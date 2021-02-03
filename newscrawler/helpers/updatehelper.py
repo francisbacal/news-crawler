@@ -21,7 +21,7 @@ class UpdateHelper(DateChecker):
     ## CHECK IF FOR SECTION UPDATE WHICH IS MORE THAN 2 WEEKS SINCE LAST UPDATE FROM TODAY OR NO SECTION IN DB
     two_weeks = self.less_week(self.date_updated, 2)
     is_weekend = self.is_weekend(self.today)
-
+    
     self.for_section_update = True if any([two_weeks, not sections, is_weekend]) else False
 
     self.for_article_update = True if all([not self.is_today(self.date_updated), not is_weekend, not self.for_section_update]) else False

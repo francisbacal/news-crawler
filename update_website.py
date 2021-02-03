@@ -41,33 +41,36 @@ if __name__ == '__main__':
             }
         }
     }
+    # RAW_QUERY = {
+    #     "query": {
+    #         "fqdn": "zitseng.com",
+    #         # "fqdn": "wildjunket.com",
+    #         "created_by": "Singapore Website Done"
+    #     }
+    # }
 
     # DEFINE PAYLOAD
     PAYLOAD = RAW_QUERY
     PARAMS = {}
 
-    # CHECK FOR WEBSITES WITH LESS THAN 2 WEEKS
-    # websites_2_weeks_count = get_website_count(MORE_THAN_2_WEEKS_RAW_QUERY, raw_website=True)
+    while True:
+        websites = get_websites(PAYLOAD, PARAMS, limit=5, raw_website=True)
+        
+        if not websites:
+            raise crawler.commonError("No website/s to update")
 
-    websites = get_websites(PAYLOAD, PARAMS, limit=1, raw_website=True)
+        # DECLARE NUMBER OF PROCESS FOR CRAWLING
+        process_count = os.cpu_count() - 1
+        NUM_PROCESS = process_count if len(websites) > process_count  else len(websites)
 
-    if not websites:
-        raise crawler.commonError("NoneType or Empty list not allowed")
+        # RUN MAIN PROCESS METHOD
+        ## TODO: ADD TO DATASET SECTION AND ARTICLE FOR STRAITSTIMES
+        try:
+            log.debug('Starting crawler')
+            result = crawl_init(websites)
 
-    # DECLARE NUMBER OF PROCESS FOR CRAWLING
-    process_count = os.cpu_count() - 1
-    NUM_PROCESS = process_count if len(websites) > process_count  else len(websites)
-
-    # RUN MAIN PROCESS METHOD
-    ## TODO: ADD TO DATASET SECTION AND ARTICLE FOR STRAITSTIMES
-    try:
-        log.debug('Starting crawler')
-        result = crawl_init(websites)
-
-        print("\n================== RESULTS ==================")
-        pprint(result)
-    except Exception as e:
-        log.error(e, exc_info=True)
-        print(e)
-
-    # UPDATE WEBSITE IN DATABASE
+            print("\n================== RESULTS ==================")
+            pprint(result)
+        except Exception as e:
+            log.error(e, exc_info=True)
+            print(e)

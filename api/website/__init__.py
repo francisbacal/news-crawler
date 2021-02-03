@@ -84,13 +84,14 @@ class Website:
     except Exception as e:
       raise websiteAPIError(url, e)
 
-  def update(self, body: dict={}, website_id: str=None, raw_website=False):
-    if not body:
-      raise commonError(error="No valid data to be updated")
-    
-    url = self.url + website_id
+  def update(self, body: dict={}, website_id: str=None, **kwargs):
+  
+    # EXTEND KWARGS TO OPTIONS IF KEY EXISTS
+    self.options = extend_opt(self.options, kwargs)
+
     if self.options.raw_website:
       url = f"http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/{website_id}"
+      body['created_by'] = "Singapore Website Done"
     else:
       url = self.url + website_id
 

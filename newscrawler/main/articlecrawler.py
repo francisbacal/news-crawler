@@ -226,7 +226,7 @@ def save_thread(article_url: str, article_website_id: str):
           "website": article_website_id,
           "article_url": article_url
         }
-
+  pprint(save_data)
   payload = articleLinksAPI.defaul_schema(save_data)
   response = articleLinksAPI.add(payload)
   
@@ -278,7 +278,6 @@ def save_pool(article_data):
         log.error(e, exc_info=True)
         raise ArticleCrawlerError("Error updating website")
 
-
 def save_articles(article_data: dict):
   """
   Save the scraped articles to articles database
@@ -300,7 +299,6 @@ def save_articles(article_data: dict):
       except Exception as e:
         log.error(e, exc_info=True)
         return "Error"
-
 
 #---------- INIT METHOD ----------#
 

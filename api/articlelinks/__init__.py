@@ -1,6 +1,7 @@
 from newscrawler import init_log, Options, extend_opt
 from ..exceptions import articleLinksAPIError, DuplicateValue
 from bson import json_util
+from pprint import pprint
 
 import requests, json, datetime
 
@@ -19,7 +20,6 @@ class ArticleLinks():
             self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article/"
 
     def defaul_schema(self, article_data: dict):
-        
         try:
             article_url = article_data['article_url']
             website = article_data['website']
@@ -103,7 +103,7 @@ class ArticleLinks():
         
         if not body or not isinstance(body, dict):
             raise ValueError("Invalid body value")
-
+        
         try:
             response = requests.post(url, data=json.dumps(body, default=json_util.default), headers=self.headers)
         

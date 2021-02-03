@@ -8,6 +8,8 @@ from .options import *
 from sklearn.datasets import clear_data_home
 from pprint import pprint
 from collections import OrderedDict
+from chardet import detect
+from datetime import datetime
 
 import pandas as pd, tldextract, joblib, re, logging
 
@@ -17,10 +19,16 @@ class pageLinks():
   """
   Get all links in a source page
   """
-  def __init__(self, source: str=None, url: str=None, **kwargs):
+  def __init__(self, source: str=None, url: str=None, home_url: str=None, **kwargs):
     # clear_data_home()
     self.options = Options()
     self.options = extend_opt(self.options, kwargs)
+
+    if not home_url: home_url = url
+
+    self.main_url_parsed = urlparse(home_url)
+    self.main_url_ext = tldextract.extract(home_url)
+
 
     if not self.options.testing:
       if not source:
@@ -41,9 +49,13 @@ class pageLinks():
 
   def run(self):
     soup = BeautifulSoup(self.source, 'html.parser')
-    title = soup.title.string
-
-    is_en = self.__language(title)
+    try:
+      title = soup.title.string
+    except:
+      title = None
+    
+    if title:
+      is_en = self.__language(title)
 
     a_blocks = soup.find_all('a', href=True)
     ul_blocks = soup.find_all('ul')
@@ -62,18 +74,11 @@ class pageLinks():
   def __clean_list(self, result: list):
     clean_result = []
     exclusions = ["#", "/"]
-    main_url_ext = tldextract.extract(self.url)
-
+    
     #---------- VALIDATE ----------#
     for res in result:
       parsed_url = urlparse(res)
       ext = tldextract.extract(res)
-      main_url_parsed = urlparse(self.url)
-      main_url_ext = tldextract.extract(self.url)
-      
-      #check if link is same domain and skip if not
-      if ext.domain != main_url_ext.domain and ext.domain != '':
-        continue
 
       #check if @ is present at netloc
       at_regex = re.compile(r"[@]")
@@ -82,15 +87,22 @@ class pageLinks():
         continue
 
       #check if no netloc and add from source url
+      
       if parsed_url.netloc == "":
         if str(res).startswith('/'):
           res = re.sub(r"^\/", "", res)
 
-        res = f"http://{main_url_parsed.netloc}/{res}"
+        res = f"http://{self.main_url_parsed.netloc}/{res}"
 
+      
       # RE PARSE URL
       parsed_url = urlparse(res)
       ext = tldextract.extract(res)
+
+      #check if link is same domain and skip if not
+      if ext.domain != '':
+        if ext.domain != self.main_url_ext.domain:
+          continue
 
       #check if a social media link
       if ext.domain in SOCIAL_MEDIA_KEYS:
@@ -128,6 +140,13 @@ class pageLinks():
     predictions = []
     
     for d in data:
+      ext = tldextract.extract(d)
+      parsed_d = urlparse(d)
+
+      # CHECK IF SAME DOMAIN WITH HOME
+      if ext.domain != self.main_url_ext.domain:
+        continue
+
       link_type = get_path_type(d, clf)
       
       if link_type == "section":
@@ -135,18 +154,14 @@ class pageLinks():
         continue
       
       # USED CASE: section url with format section.domain.ext e.g. sports.inquirer.net
-      ext = tldextract.extract(d)
-      main_url_ext = tldextract.extract(self.url)
-      parsed_d = urlparse(d)
-
-      if all([ext.subdomain != "www", ext.domain == main_url_ext.domain, parsed_d.path == ""]):
+      if all([ext.subdomain != "www", ext.domain == self.main_url_ext.domain, parsed_d.path == ""]):
         predictions.append(d)
 
     ##CLEAN RESULT
     sections = list(self.__clean_sections(predictions))
     sections = list(OrderedDict.fromkeys(sections))
     
-    return sections
+    return sections[0:10] if len(sections) > 10 else sections
 
   def __clean_sections(self, sections: list) -> list:
 
@@ -165,6 +180,7 @@ class pageLinks():
 
       #Get path or section link
       parsed_url = urlparse(section)
+      ext_url = tldextract.extract(section)
 
       if parsed_url.scheme == '':
         section = f"http://{parsed_url.netloc}{parsed_url.path}"
@@ -191,11 +207,29 @@ class pageLinks():
       if not clean_paths:
         yield section
         continue
+
       elif len(clean_paths) == 2:
         self.__firstSubDir = clean_paths[0]
         self.__secondSubDir = clean_paths[1]
       else:
         self.__firstSubDir = clean_paths[0]
+      
+      # TODO: CHECK IF FIRST SUB-DOMAIN IS INSTANCE OF YEAR
+      # AND CONTINUE IF LESS THAN 1 YEAR FROM TODAY'S YEAR
+      first_sub = str(self.__firstSubDir)
+      len_first_sub = len(first_sub)
+
+      if len_first_sub == 4:
+        try:
+          this_year = int(datetime.today().year)
+          int_first_sub = int(first_sub)
+
+          if int_first_sub < (this_year - 1):
+            continue
+          elif int_first_sub > this_year:
+            continue
+        except ValueError:
+          pass
 
       #check first sub directory for probability of exclusion
       SPACE_KEYS = ['_', '-']
@@ -288,6 +322,9 @@ class pageLinks():
       #Get subdirectories
       filter_paths = list(filter(None, path.split("/")))
 
+      if not filter_paths:
+        continue
+
       #check number of sub directory if more than 1 and continue if not
       if len(filter_paths) > 1:
         clean_paths = filter_paths
@@ -346,7 +383,7 @@ class pageLinks():
     """
     # TODO: USE MORE LANGUAGE DETECTOR ALGO/LIBRARY
     # CAN TRY TO USE POLYGLOT LIBRARY
-
+    
 
     #CHECK IF ENGLISH ASCII
     #CHECK LANGUAGE

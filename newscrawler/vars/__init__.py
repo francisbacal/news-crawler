@@ -22,6 +22,7 @@ SOCIAL_MEDIA_KEYS = [
 
 #---------- DEFINE SOCIAL MEDIA SITES ----------#
 EXCLUDED_SECTION_KEYS = [
+      'archives',
       'tag',
       'about',
       'happens',
@@ -44,6 +45,7 @@ EXCLUDED_SECTION_KEYS = [
       'sign in',
       'signup',
       'signin',
+      'search',
       'register',
       'tos',
       'sitemap',
@@ -63,5 +65,6 @@ EXCLUDED_SECTION_KEYS = [
       'legal',
       'ccpa',
       'glossary',
-      'donate'
+      'donate',
+      'mailto'
     ]

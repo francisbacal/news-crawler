@@ -8,7 +8,7 @@ class DateChecker:
     Class for date checking
     """
     def __init__(self):
-        self.today = datetime.datetime.today()
+        self.today = datetime.datetime.today().replace(hour=0,minute=0,second=0,microsecond=0)
         self.weekends = [4, 5, 6]
     
     def is_today(self, input_date: type(datetime.datetime)) -> bool:
@@ -44,7 +44,6 @@ class DateChecker:
 
         if input_date.date() > n_weeks.date():
             return False
-        
         else:
             return True
 
