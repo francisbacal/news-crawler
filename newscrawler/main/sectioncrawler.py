@@ -158,12 +158,14 @@ def section_threading(url_dict: dict, sele=False):
                 raise
             else:
                 result = future.result()
+                try:
+                    # EXTEND RESULT SECTIONS
+                    sections.extend(result['sections'])
 
-                # EXTEND RESULT SECTIONS
-                sections.extend(result['sections'])
-
-                # EXTEND RESULT ARTICLES
-                articles.extend(result['articles'])
+                    # EXTEND RESULT ARTICLES
+                    articles.extend(result['articles'])
+                except TypeError:
+                    pass
 
     
     sections = list(OrderedDict.fromkeys(sections))
