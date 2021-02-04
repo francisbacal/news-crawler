@@ -92,7 +92,11 @@ def crawl_sections(url: str, home_url: str, iter_items: dict, repeat: int=2, ite
         # iter_sections = list(OrderedDict.fromkeys(iter_sections))
 
     except crawler.sourceError:
-        return iter_sections
+        data = {
+            "sections": iter_sections,
+            "articles": iter_articles
+        }
+        return data
     except Exception as e:
         log.error(e, exc_info=True)
         raise
@@ -114,7 +118,7 @@ def crawl_sections(url: str, home_url: str, iter_items: dict, repeat: int=2, ite
 
                     log.debug(f"crawling section {section}")
                     crawl_result = crawl_sections(section, home_url, iter_items_data, iteration=current_iteration)
-
+                    
                     # EXTEND RESULTS AGAIN
                     iter_sections.extend(crawl_result['sections'])
                     iter_articles.extend(crawl_result['articles'])
@@ -150,8 +154,8 @@ def section_threading(url_dict: dict, sele=False):
         "iter_articles": []
     }
 
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(crawl_sections, section, url_dict['website_url'], iter_items, iteration=1) for section in _sections]
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(crawl_sections, section, url_dict['website_url'], iter_items, iteration=2) for section in _sections]
 
         for future in as_completed(futures):
             try:
@@ -218,7 +222,7 @@ def get_home(website: dict, raw_website=False) -> dict:
     # GET LINKS
     try:
         links = get_links(url, url)
-
+        
         data['home_sections'] = links['sections']
         data['home_articles'] = links['articles']
     except crawler.sourceError:
@@ -232,10 +236,15 @@ def get_home(website: dict, raw_website=False) -> dict:
     # TODO: CALL RECURSIVE CRAWLING HERE
     ## FOR NON ERROR WEBSITES
 
-    # if not data['error']:
-
-
-    return data
+    # CRAWL SECTIONS IN HOME SECTIONS
+    if not data['error'] and data['home_sections']:
+        try:
+            section_threading_result = section_threading(data)
+            save_pool(section_threading_result)
+        except:
+            raise
+    else:
+        return data
 
 def section_crawl_home(websites: list) -> dict:
     """
@@ -247,6 +256,8 @@ def section_crawl_home(websites: list) -> dict:
     for_selenium = []
 
     log.debug(f"Crawling Home Pages...")
+
+
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(get_home, website, raw_website=True) for website in websites] # query from raw website db. Remove parameter raw_website if will query on main website db
 
@@ -255,13 +266,13 @@ def section_crawl_home(websites: list) -> dict:
                 future.result()
             except Exception as e:
                 log.error(e, exc_info=True)
-                pass
+                continue
             else:
                 result = future.result()
                 if result['error']:
                     for_selenium.append(result)
-                else:
-                    home_data.append(result)
+                # else:
+                #     home_data.append(result)
 
     
     data = {
@@ -338,71 +349,84 @@ def sele_section_crawl_home(websites: list):
                     break
         
     browser.quit()
+
+    try:
+        save_pool(data)
+    except:
+        raise
+
     return results
 
 
 #---------- SAVE METHOD ----------#
-def save_article_thread(article_url: str, article_website_id: str):
+def save_article_thread(article_url: str, article_website_fqdn: str, article_website_id: str):
     articleLinksAPI = ArticleLinks(testing=False)
     save_data = {
             "website": article_website_id,
+            "fqdn": article_website_fqdn,
             "article_url": article_url
             }
-    payload = articleLinksAPI.defaul_schema(save_data)
-    response = articleLinksAPI.add(payload)
+    payload = articleLinksAPI.default_schema(save_data)
+    
+    try:
+        response = articleLinksAPI.add(payload)
+        log.debug(f"Added {article_url}")
+    except Exception as e:
+        log.debug(f"Error adding article {article_url} - {e}")
   
-def save_pool(section_data):
+def save_pool(data: dict):
     """
-    Thread Pool Executor method caller
+    Thread Pool Executor method caller for saving website_data
     """
     websiteAPI = Website()
+    pprint(data)
+    # for data in website_data:
 
-    for data in section_data:
+    #UPDATE OR ADD WEBSITE IN DATABASE
+    date_created = datetime.today().isoformat()
+    date_updated = datetime.today().isoformat()
 
-        #UPDATE OR ADD WEBSITE IN DATABASE
-        date_created = datetime.today().isoformat()
-        date_updated = datetime.today().isoformat()
+    #SAVE / UPDATE DB
+    try:
+        article_website = websiteAPI.add(data, data['website_id'], raw_website=False)
+        websiteAPI.update({}, data['website_id'], raw_website=True)
+    except DuplicateValue:
+        website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
+        article_website = websiteAPI.update(data, website_id, raw_website=False)
+        websiteAPI.update({}, data['website_id'], raw_website=True)
+    except Exception as e:
+        print(f"Error on {save_pool.__name__} - {e}")
+        raise
 
-        #SAVE / UPDATE DB
-        try:
-            article_website = websiteAPI.add(data, data['website_id'])
-            websiteAPI.update({}, data['website_id'], raw_website=True)
-        except DuplicateValue:
-            website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
-            article_website = websiteAPI.update(data, website_id, raw_website=False)
-            websiteAPI.update({}, data['website_id'], raw_website=True)
-        except Exception as e:
-            print(e)
-            raise
+    #CALL THREAD POOL MAP FOR SAVING
+    articles = data['articles']
 
-        #CALL THREAD POOL MAP FOR SAVING
-        articles = data['articles']
+    if articles:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(save_article_thread, article, article_website['fqdn'], article_website['_id']) for article in articles]
 
-        if articles:
-            with ThreadPoolExecutor() as executor:
-                futures = [executor.submit(save_article_thread, article, article_website['_id']) for article in articles]
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except DuplicateValue as e:
+                    log.error(e, exc_info=True)
+                    print(e)
+                    continue
+                except Exception as e:
+                    log.error(e, exc_info=True)
+                    raise
 
-                for future in as_completed(futures):
-                    try:
-                        future.result()
-                    except DuplicateValue as e:
-                        log.error(e, exc_info=True)
-                        print(e)
-                        continue
-                    except Exception as e:
-                        log.error(e, exc_info=True)
-                        raise
-
-def save_section(section_data: dict):
+# METHOD save_section IS FOR DELETION
+def save_section(website_data: list):
     """
     Save the scraped articles to articles database
     """
 
     #SPLIT DATA LIST
     CPU_COUNT = os.cpu_count() - 1
-    PROCESSES = CPU_COUNT if len(section_data) > CPU_COUNT else len(section_data)
+    PROCESSES = CPU_COUNT if len(website_data) > CPU_COUNT else len(website_data)
 
-    splitted_sections = crawler.list_split(section_data, PROCESSES)
+    splitted_sections = crawler.list_split(website_data, PROCESSES)
 
     #CALL MULTIPROCESSING METHOD
     with ProcessPoolExecutor(max_workers=PROCESSES) as executor:
@@ -452,45 +476,50 @@ def section_crawl_init(websites: list, num_process: int):
                 result_home_data = pool_result['home_data']
                 result_for_selenium = pool_result['for_selenium']
                 
+                #=============== FOR DELETION ====================#
                 # APPEND RESULTS TO RESULT VARIABLES
-                for home_data in result_home_data:
+                # for home_data in result_home_data:
 
-                    section_data = {
-                        "home_sections": home_data['home_sections'],
-                        "website_id": home_data['website_id'],
-                        "website_url": home_data['website_url'],
-                        "fqdn": home_data['fqdn'],
-                        "country": home_data['country'],
-                        "country_code": home_data['country_code'],
-                    }
+                #     section_data = {
+                #         "home_sections": home_data['home_sections'],
+                #         "website_id": home_data['website_id'],
+                #         "website_url": home_data['website_url'],
+                #         "fqdn": home_data['fqdn'],
+                #         "country": home_data['country'],
+                #         "country_code": home_data['country_code'],
+                #     }
 
-                    article_data = {
-                        "home_articles": home_data['home_articles'],
-                        "website_id": home_data['website_id'],
-                        "website_url": home_data['website_url']
-                    }
+                #     article_data = {
+                #         "home_articles": home_data['home_articles'],
+                #         "website_id": home_data['website_id'],
+                #         "website_url": home_data['website_url']
+                #     }
 
-                    home_sections.append(section_data)
-                    articles.append(article_data)
+                #     home_sections.append(section_data)
+                #     articles.append(article_data)
+                #===================================#
 
                 # APPEND RESULT FOR SELENIUM
                 if result_for_selenium:
                     for res in result_for_selenium:
                         for_selenium.append(res)
     
-    # SECOND POOL PROCESS FOR CRAWLING OF SECTIONS FOR EACH HOME SECTIONS
-    log.debug(f"Initializing Second ProcessPoolExecutor")
-    with ProcessPoolExecutor(max_workers=num_process) as executor:
-        futures = [executor.submit(section_threading, section) for section in home_sections]
+    #=============== FOR DELETION ====================#
+    # # SECOND POOL PROCESS FOR CRAWLING OF SECTIONS FOR EACH HOME SECTIONS
+    # log.debug(f"Initializing Second ProcessPoolExecutor")
+    # with ProcessPoolExecutor(max_workers=num_process) as executor:
+    #     futures = [executor.submit(section_threading, section) for section in home_sections]
 
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(e)
-                log.error(e, exc_info=True)
-            else:
-                data.append(future.result())
+    #     for future in as_completed(futures):
+    #         try:
+    #             future.result()
+    #         except Exception as e:
+    #             print(e)
+    #             log.error(e, exc_info=True)
+    #         else:
+    #             data.append(future.result())
+
+
 
     ## POOL PROCESS FOR DYNAMIC WEBSITES
     if for_selenium:
@@ -509,6 +538,7 @@ def section_crawl_init(websites: list, num_process: int):
                     future.result()
                 except Exception as e:
                     log.error(e, exc_info=True)
+                    continue
                 else:
                     selenium_result = future.result()
                     for res in selenium_result:

@@ -15,6 +15,28 @@ import pandas as pd, tldextract, joblib, re, logging
 
 log = logging.getLogger('LinksLog')
 
+######################################################################
+## TODO: USED CASES:
+"""
+FOR SECTION LINKS:
+    - sample: http://sg.example.org/
+
+    where sg is country:
+        APPROACH:
+            check if subdomain is not www then do not parse or get
+            subdomain which is not the same with home url subdomain
+
+            e.g.
+              if subdomain is sg...
+              do not get other links like my.example.org
+
+FOR ARTICLE LINKS:
+  - add validator for none html websites like pdf files
+      APPROACH:
+          - check url if has an extension e.g. .pdf .jpg
+"""
+#####################################################################
+
 class pageLinks():
   """
   Get all links in a source page
@@ -58,7 +80,7 @@ class pageLinks():
       is_en = self.__language(title)
 
     a_blocks = soup.find_all('a', href=True)
-    ul_blocks = soup.find_all('ul')
+    ul_blocks = soup.find_all('ul') # TODO: search all ul nav
 
     _result = [a['href'] for a in a_blocks]
   

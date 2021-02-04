@@ -227,7 +227,7 @@ def save_thread(article_url: str, article_website_id: str):
           "article_url": article_url
         }
   pprint(save_data)
-  payload = articleLinksAPI.defaul_schema(save_data)
+  payload = articleLinksAPI.default_schema(save_data)
   response = articleLinksAPI.add(payload)
   
 def save_pool(article_data):

@@ -19,17 +19,18 @@ class ArticleLinks():
         else:
             self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article/"
 
-    def defaul_schema(self, article_data: dict):
+    def default_schema(self, article_data: dict):
         try:
             article_url = article_data['article_url']
             website = article_data['website']
+            fqdn = article_data['fqdn']
         except KeyError:
             raise articleLinksAPIError("Invalid article_data passed")
 
         schema = {
             "article_status": "Queued",
             "article_url": article_url,
-            "article_source_url": data['fqdn'],
+            "article_source_url": fqdn,
             "website": website,
             "date_created": datetime.datetime.today().isoformat(),
             "date_updated": datetime.datetime.today().isoformat(),

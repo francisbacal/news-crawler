@@ -43,7 +43,7 @@ if __name__ == '__main__':
     }
     # RAW_QUERY = {
     #     "query": {
-    #         "fqdn": "zitseng.com",
+    #         "fqdn": "mitsueki.sg",
     #         # "fqdn": "wildjunket.com",
     #         "created_by": "Singapore Website Done"
     #     }
@@ -74,3 +74,5 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e, exc_info=True)
             print(e)
+
+        break

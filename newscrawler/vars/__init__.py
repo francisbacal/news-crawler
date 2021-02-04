@@ -67,5 +67,6 @@ EXCLUDED_SECTION_KEYS = [
       'glossary',
       'donate',
       'mailto',
-      'widgets'
+      'widgets',
+      'error'
     ]

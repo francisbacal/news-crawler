@@ -30,7 +30,7 @@ class Source:
 
     if not page:
       log.debug("Cloudscraper failed. Trying Requests")
-      get_request = catch('None', lambda: requests.get(self.url, timeout=self.timeout))
+      get_request = self.request(self.url)
       page = catch('None', lambda: get_request.text)
     
     # if not page:
@@ -48,3 +48,25 @@ class Source:
     
     self.r_url = get_request.url
     self.page = page
+
+  def request(self, url):
+    try:
+      response = requests.get(self.url, timeout=self.timeout)
+    
+      error = any([
+            str(response.status_code).startswith('5'),
+            str(response.status_code).startswith('4')
+          ])
+
+      if error:
+        raise sourceError('Error Getting Source')
+      else:
+        return response
+    
+    except sourceError:
+      raise
+
+    except:
+      return None
+
+      
