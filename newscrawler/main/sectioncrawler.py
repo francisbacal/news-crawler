@@ -232,10 +232,10 @@ def get_home(website: dict, raw_website=False) -> dict:
     # TODO: CALL RECURSIVE CRAWLING HERE
     ## FOR NON ERROR WEBSITES
 
-    if not data['error']:
+    # if not data['error']:
 
 
-    # return data
+    return data
 
 def section_crawl_home(websites: list) -> dict:
     """
@@ -247,7 +247,7 @@ def section_crawl_home(websites: list) -> dict:
     for_selenium = []
 
     log.debug(f"Crawling Home Pages...")
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(get_home, website, raw_website=True) for website in websites] # query from raw website db. Remove parameter raw_website if will query on main website db
 
         for future in as_completed(futures):
