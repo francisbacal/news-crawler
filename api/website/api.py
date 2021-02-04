@@ -87,7 +87,7 @@ class Website:
       raise websiteAPIError(url, e)
 
   def update(self, body: dict={}, website_id: str=None, **kwargs):
-  
+    
     # EXTEND KWARGS TO OPTIONS IF KEY EXISTS
     self.options = extend_opt(self.options, kwargs)
 
@@ -211,6 +211,9 @@ class Website:
     body['fqdn'] = self.fqdn
     body['website_url'] = self.website_url
     body['website_name'] = self.name
+    print("\n===================")
+    pprint(body)
+    print("===================")
 
     if website_data and raw_website_data:
       # body['website_name'] = raw_website_data['name']
@@ -260,10 +263,13 @@ class Website:
       self.domain = tld_url.domain
       self.subdomain = tld_url.subdomain
       self.suffix = tld_url.suffix
+      
+      if self.subdomain == "":
+        self.website_url = f"{self.protocol}://{self.domain}.{self.suffix}"
+      else:
+        self.website_url = f"{self.protocol}://{self.subdomain}.{self.domain}.{self.suffix}"
 
-      self.website_url = f"{self.protocol}://{self.subdomain}.{self.domain}.{self.suffix}"
-
-      if self.subdomain != "www":
+      if self.subdomain != "www" and self.subdomain != "":
           self.fqdn = f"{self.subdomain}.{self.domain}.{self.suffix}"
       else:
           self.fqdn = f"{self.domain}.{self.suffix}"
@@ -310,7 +316,7 @@ class Website:
       
       # CHECK NAME
       if duplicate['parameter'] == "website_name":
-          if self.subdomain != "www":
+          if self.subdomain != "www" and self.subdomain != "":
               self.name = f"{self.subdomain.capitalize()} {self.domain.capitalize()}"
           else:
               self.name = f"{self.domain.capitalize()} {self.suffix}"

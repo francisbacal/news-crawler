@@ -42,11 +42,16 @@ if __name__ == '__main__':
         }
     }
     # RAW_QUERY = {
+    #     # "query": {
+    #     #     "fqdn": "mitsueki.sg",
+    #     #     # "fqdn": "wildjunket.com",
+    #     #     "created_by": "Singapore Website Done"
+    #     # }
     #     "query": {
-    #         "fqdn": "mitsueki.sg",
-    #         # "fqdn": "wildjunket.com",
-    #         "created_by": "Singapore Website Done"
-    #     }
+    #         "_id": {"$in": [
+    #         "601400e17e8b804af12d4a7f"
+    #         ]}
+    # }
     # }
 
     # DEFINE PAYLOAD
@@ -74,5 +79,3 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e, exc_info=True)
             print(e)
-
-        break
