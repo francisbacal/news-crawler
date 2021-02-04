@@ -29,6 +29,7 @@ class ArticleLinks():
         schema = {
             "article_status": "Queued",
             "article_url": article_url,
+            "article_source_url": data['fqdn'],
             "website": website,
             "date_created": datetime.datetime.today().isoformat(),
             "date_updated": datetime.datetime.today().isoformat(),

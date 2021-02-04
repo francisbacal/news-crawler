@@ -66,5 +66,6 @@ EXCLUDED_SECTION_KEYS = [
       'ccpa',
       'glossary',
       'donate',
-      'mailto'
+      'mailto',
+      'widgets'
     ]
