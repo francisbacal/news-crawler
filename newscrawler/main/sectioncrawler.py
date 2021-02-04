@@ -16,6 +16,8 @@ import newscrawler as crawler, os, math, time
 log = init_log('MultiSection')
 websiteAPI = Website()
 
+# TODO: REFACTOR CODE TO SAVE AFTER CRAWLING ONE WEBSITE
+
 
 def get_links(url: str, home_url: str=None) -> list:
     """
@@ -226,7 +228,14 @@ def get_home(website: dict, raw_website=False) -> dict:
         print(e)
         raise
 
-    return data
+
+    # TODO: CALL RECURSIVE CRAWLING HERE
+    ## FOR NON ERROR WEBSITES
+
+    if not data['error']:
+
+
+    # return data
 
 def section_crawl_home(websites: list) -> dict:
     """

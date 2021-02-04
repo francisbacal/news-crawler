@@ -112,13 +112,8 @@ class pageLinks():
       if res in exclusions:
         continue
 
-      #change scheme to http for all urls
-      if parsed_url.query != '':
-        query = f"?{parsed_url.query}"
-      else:
-        query = ''
-
-      res = f"http://{parsed_url.netloc}{parsed_url.path}{query}"
+      #change scheme to http for all urls and remove query
+      res = f"http://{parsed_url.netloc}{parsed_url.path}"
 
       #check if already in list
       if res not in clean_result:
