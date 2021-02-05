@@ -147,7 +147,7 @@ class Website:
     # GET WEBSITE DETAILS FROM RAW WEBSITE
     raw_website = None
 
-    if raw_id:
+    if raw_id and self.options.raw_website:
 
       QUERY = {
         "query": {
@@ -156,20 +156,16 @@ class Website:
       }
 
       raw_website = self.get(QUERY, limit=1, raw_website=True)[0]
+    
+    #CHECK IF EXISTING
+    existing = self.__exists(data)
 
-    if raw_website and data:
-
-      #CHECK IF EXISTING
-      existing = self.__exists(raw_website)
-      
-      if existing:
-        raise DuplicateValue("Duplicate Website in Database")
-        
-      else:
-        body = self.__generate_add_body(data, raw_website)
-
+    if existing:
+      raise DuplicateValue("Duplicate Website in Database")
+    elif raw_website:
+      body = self.__generate_add_body(data, raw_website)
     else:
-      raise websiteAPIError(f"Invalid parameters passed on {self.add.__name__}")
+      body = self.__generate_add_body(data)
 
     url = self.url
     
@@ -211,14 +207,18 @@ class Website:
     body['fqdn'] = self.fqdn
     body['website_url'] = self.website_url
     body['website_name'] = self.name
+
     print("\n===================")
     pprint(body)
     print("===================")
 
     if website_data and raw_website_data:
-      # body['website_name'] = raw_website_data['name']
-      # body['fqdn'] = raw_website_data['fqdn']
-      # body['website_url'] = raw_website_data['url']
+      body['country'] = raw_website_data['country']
+      body['country_code'] = raw_website_data['country_code']
+      body['main_sections'] = website_data['main_sections']
+      body['alexa_rankings'] = raw_website_data['alexa_rankings']
+    
+    elif website_data:
       body['country'] = raw_website_data['country']
       body['country_code'] = raw_website_data['country_code']
       body['main_sections'] = website_data['main_sections']

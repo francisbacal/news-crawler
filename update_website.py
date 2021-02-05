@@ -31,16 +31,17 @@ if __name__ == '__main__':
         "date_updated": {"$lt": less_2_weeks.isoformat()}
     }
 
-    # DEFINE PAYLOAD
-    PAYLOAD = generate_payload()
+    # DEFINE PARAMETERS FOR GETTING WEBSITES
+    PAYLOAD = generate_payload("Philippines")
+    LIMIT = 1
     PARAMS = {}
 
     while True:
-        websites = get_websites(PAYLOAD, PARAMS, limit=5, raw_website=False)
+        websites = get_websites(PAYLOAD, PARAMS, limit=LIMIT, raw_website=False)
         
         if not websites:
             raise crawler.commonError("No website/s to update")
-
+        
         # DECLARE NUMBER OF PROCESS FOR CRAWLING
         process_count = os.cpu_count() - 1
         NUM_PROCESS = process_count if len(websites) > process_count  else len(websites)
@@ -56,3 +57,5 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e, exc_info=True)
             print(e)
+
+        break

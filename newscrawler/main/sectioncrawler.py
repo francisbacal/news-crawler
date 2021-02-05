@@ -136,7 +136,7 @@ def crawl_sections(url: str, home_url: str, iter_items: dict, repeat: int=2, ite
 
     return data
 
-def section_threading(url_dict: dict, sele=False):
+def section_threading(url_dict: dict):
     """
     Method to invoke ThreadPoolExecutor to recursively crawl sections concurrently
     """
@@ -204,6 +204,7 @@ def get_home(website: dict, raw_website=False) -> dict:
         url = website['website_url']
 
     website_id = website['_id']
+    website_sections = website['main_sections']
 
     # CREATE INITIAL RETURN DATA
     data = {
@@ -224,6 +225,8 @@ def get_home(website: dict, raw_website=False) -> dict:
         links = get_links(url, url)
         
         data['home_sections'] = links['sections']
+        data['home_sections'] = website_sections
+        
         data['home_articles'] = links['articles']
     except (crawler.sourceError, crawler.pageLinksError):
         data['error'] = True
@@ -259,7 +262,7 @@ def section_crawl_home(websites: list) -> dict:
 
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(get_home, website, raw_website=True) for website in websites] # query from raw website db. Remove parameter raw_website if will query on main website db
+        futures = [executor.submit(get_home, website) for website in websites] # query from raw website db. Remove parameter raw_website if will query on main website db
 
         for future in as_completed(futures):
             try:
@@ -296,7 +299,7 @@ def sele_section_crawl_home(websites: list):
     results = []
 
     for website in websites:
-        url = website['url']
+        url = website['website_url']
         data = {
             "website_id": website['_id'],
             "website_url": url,
@@ -357,7 +360,6 @@ def sele_section_crawl_home(websites: list):
 
     return results
 
-
 #---------- SAVE METHOD ----------#
 def save_article_thread(article_url: str, article_website_fqdn: str, article_website_id: str):
     articleLinksAPI = ArticleLinks(testing=False)
@@ -374,7 +376,7 @@ def save_article_thread(article_url: str, article_website_fqdn: str, article_web
     except Exception as e:
         log.debug(f"Error adding article {article_url} - {e}")
   
-def save_pool(data: dict):
+def save_pool(data: dict, save_section=False):
     """
     Thread Pool Executor method caller for saving website_data
     """
@@ -386,19 +388,23 @@ def save_pool(data: dict):
     date_created = datetime.today().isoformat()
     date_updated = datetime.today().isoformat()
 
+    # VALIDATION TO SET IF MAIN SECTION IS TO BE UPDATED
+    if save_section:
+        del data['main_sections']
+
     #SAVE / UPDATE DB
     try:
         article_website = websiteAPI.add(data, data['website_id'], raw_website=False)
-        websiteAPI.update({}, data['website_id'], raw_website=True)
+        # websiteAPI.update({}, data['website_id'], raw_website=True) # for raw website
     except DuplicateValue:
         website_id = websiteAPI.get({"fqdn": data['fqdn']}, limit=1, raw_website=False)[0]['_id']
         article_website = websiteAPI.update(data, website_id, raw_website=False)
-        websiteAPI.update({}, data['website_id'], raw_website=True)
+        # websiteAPI.update({}, data['website_id'], raw_website=True) # for raw website
     except Exception as e:
         print(f"Error on {save_pool.__name__} - {e}")
         raise
 
-    #CALL THREAD POOL MAP FOR SAVING
+    #CALL THREAD POOL MAP FOR SAVING ARTICLES
     articles = data['articles']
 
     if articles:
@@ -416,30 +422,30 @@ def save_pool(data: dict):
                     log.error(e, exc_info=True)
                     raise
 
-# METHOD save_section IS FOR DELETION
-def save_section(website_data: list):
-    """
-    Save the scraped articles to articles database
-    """
+#=============== FOR DELETION ====================#
+# def save_section(website_data: list):
+#     """
+#     Save the scraped articles to articles database
+#     """
 
-    #SPLIT DATA LIST
-    CPU_COUNT = os.cpu_count() - 1
-    PROCESSES = CPU_COUNT if len(website_data) > CPU_COUNT else len(website_data)
+#     #SPLIT DATA LIST
+#     CPU_COUNT = os.cpu_count() - 1
+#     PROCESSES = CPU_COUNT if len(website_data) > CPU_COUNT else len(website_data)
 
-    splitted_sections = crawler.list_split(website_data, PROCESSES)
+#     splitted_sections = crawler.list_split(website_data, PROCESSES)
 
-    #CALL MULTIPROCESSING METHOD
-    with ProcessPoolExecutor(max_workers=PROCESSES) as executor:
-        futures = [executor.submit(save_pool, section) for section in splitted_sections]
+#     #CALL MULTIPROCESSING METHOD
+#     with ProcessPoolExecutor(max_workers=PROCESSES) as executor:
+#         futures = [executor.submit(save_pool, section) for section in splitted_sections]
 
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                log.error(e, exc_info=True)
-                return "Error"
+#         for future in as_completed(futures):
+#             try:
+#                 future.result()
+#             except Exception as e:
+#                 log.error(e, exc_info=True)
+#                 return "Error"
     
-    return "SAVED"
+#     return "SAVED"
 
 #---------- INIT METHOD ----------#
 @crawler.logtime

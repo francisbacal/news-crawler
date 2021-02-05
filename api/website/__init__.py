@@ -9,14 +9,14 @@ from ..exceptions import websiteAPIError, DuplicateValue
 from newscrawler import DateChecker, country_names
 
 
-def generate_payload(countries=[], raw_website: bool=False) -> dict:
+def generate_payload(countries=None, raw_website: bool=False) -> dict:
     """
     Generate a payload of websites
         @params:    country         -   Country name. Accepts string or list of strings
         @params:    raw_website     -   Pass True if to query in raw website DB. [Default: False]
     """
     date_checker = DateChecker()
-    
+
     if not isinstance(countries, list) and not isinstance(countries, str):
         raise PayloadError('Invalid countries type. Must be a list')
 
@@ -24,7 +24,7 @@ def generate_payload(countries=[], raw_website: bool=False) -> dict:
         countries = [countries]
 
     COUNTRIES = [country.lower().capitalize() for country in countries if country.lower().capitalize() in country_names]
-
+    
     # QUERY TO RAW WEBSITES
     if raw_website:
         PAYLOAD = {
