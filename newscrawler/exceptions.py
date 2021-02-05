@@ -10,6 +10,10 @@ class sourceError(Exception):
     self.message = f"Error occured while getting page source for {self.url}, {err_msg} "
     super().__init__(self.message)
 
+class pageLinksError(Exception):
+  def __init__(self, message: str=""):
+    super().__init__(message)
+
 class modelError(Exception):
   def __init__(self, message: str):
     super().__init__(message)

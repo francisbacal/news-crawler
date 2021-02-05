@@ -1,4 +1,4 @@
-
+from .countries import *
 logs = [
   'SectionCrawler',
   'ArticleCrawler',

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from .helpers import catch, get_path_type
-from .exceptions import commonError
+from .exceptions import commonError, pageLinksError
 from .model import Compare
 from .vars import EXCLUDED_SECTION_KEYS, SOCIAL_MEDIA_KEYS
 from .options import *
@@ -85,7 +85,7 @@ class pageLinks():
     _result = [a['href'] for a in a_blocks]
   
     if not _result:
-      raise commonError("No links parsed")
+      raise pageLinksError("No links parsed")
     
     # if is_en:
     self.list = self.__clean_list(_result)

@@ -3,7 +3,7 @@ from pprint import pprint
 from newscrawler import init_log
 from itertools import islice, chain
 from collections import OrderedDict
-from api import Website
+from api import Website, generate_payload
 from newscrawler import Seledriver
 from datetime import datetime ,timedelta
 import newscrawler as crawler, os
@@ -19,9 +19,8 @@ from newscrawler.main import get_websites, get_website_count, classify_websites,
 ##############
 
 if __name__ == '__main__':
-    ## QUERY TO DATABASE FOR WEBSITES
     
-
+    ## QUERY TO DATABASE FOR WEBSITES
     date_checker = crawler.DateChecker()
     less_2_weeks = datetime.today() - timedelta(14)
 
@@ -32,34 +31,12 @@ if __name__ == '__main__':
         "date_updated": {"$lt": less_2_weeks.isoformat()}
     }
 
-    # QUERY TO RAW WEBSITES
-    RAW_QUERY = {
-        "query": {
-            "country": "Singapore",
-            "created_by": "Singapore Website",
-            "date_updated": {"$lt": date_checker.today.isoformat()
-            }
-        }
-    }
-    # RAW_QUERY = {
-    #     # "query": {
-    #     #     "fqdn": "mitsueki.sg",
-    #     #     # "fqdn": "wildjunket.com",
-    #     #     "created_by": "Singapore Website Done"
-    #     # }
-    #     "query": {
-    #         "_id": {"$in": [
-    #         "601400e17e8b804af12d4a7f"
-    #         ]}
-    # }
-    # }
-
     # DEFINE PAYLOAD
-    PAYLOAD = RAW_QUERY
+    PAYLOAD = generate_payload()
     PARAMS = {}
 
     while True:
-        websites = get_websites(PAYLOAD, PARAMS, limit=5, raw_website=True)
+        websites = get_websites(PAYLOAD, PARAMS, limit=5, raw_website=False)
         
         if not websites:
             raise crawler.commonError("No website/s to update")

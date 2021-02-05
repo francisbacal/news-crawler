@@ -95,10 +95,7 @@ def crawl_init(websites: list):
         section_crawl_results = section_crawl_init(for_section_update, NUM_PROCESSES)
 
     # GET ARTICLES FOR ARTICLE ONLY PARSING
-    # if for_article_update:
-    #     article_crawl_results = article_crawl_init(websites, NUM_PROCESSES)
-
-    #     # ADD ARTICLES IN DATABASE
-    #     section_save = save_articles(article_crawl_results)
+    if for_article_update:
+        article_crawl_results = article_crawl_init(websites, NUM_PROCESSES)
 
     return "DONE"

@@ -8,7 +8,7 @@ import newscrawler as crawler, os, math, api, datetime
 
 log = crawler.init_log('ArticleCrawler')
 
-def get_articles(url: str, src_links: type(crawler.pageLinks)=None) -> list:
+def get_articles(url: str, home_url: str, src_links: type(crawler.pageLinks)=None) -> list:
   """
   Get all article links in a url
   """
@@ -21,7 +21,11 @@ def get_articles(url: str, src_links: type(crawler.pageLinks)=None) -> list:
       links = src_links
     else:
       source = crawler.Source(url)
-      links = crawler.pageLinks(source.page, source.r_url)
+      source_page = crawler.catch('None', lambda: source.page)
+      if not source_page:
+            raise crawler.sourceError('No source parsed')
+
+      links = crawler.pageLinks(source_page, source.r_url, home_url)
 
     log.debug('Source parsed')
     articles = links.getArticleLinks()
@@ -30,7 +34,7 @@ def get_articles(url: str, src_links: type(crawler.pageLinks)=None) -> list:
     log.error(e, exc_info=True)
     return []
 
-  except crawler.sourceError as e:
+  except (crawler.sourceError, crawler.pageLinksError) as e:
     log.error(e)
     print(e)
     raise
@@ -111,6 +115,11 @@ def sele_crawl(website: dict):
   # RETURN DATA
   data['articles'] = articles
 
+  try:
+      save_pool(data)
+  except:
+      raise
+
   return data
 
 def sele_crawl_init(websites: list):
@@ -151,6 +160,7 @@ def article_crawl(website: dict):
     url = website['website_url']
     website_id = website['_id']
     sections = website['main_sections']
+    fqdn = website['fqdn']
 
     #RAISE ERROR IF NO SECTIONS
     if not sections or not isinstance(sections, list):
@@ -161,6 +171,7 @@ def article_crawl(website: dict):
     data = {
         "website_id": website_id,
         "website_url": url,
+        "fqdn": fqdn,
         "main_sections": sections,
         "articles": articles,
         "error": False
@@ -170,7 +181,7 @@ def article_crawl(website: dict):
     # GET LINKS FOR EACH SECTION
     for section in sections:
       try:
-          links = get_articles(section)
+          links = get_articles(section, url)
           articles.extend(links)
           articles = list(OrderedDict.fromkeys(articles)) #filter duplicates
       except crawler.sourceError:
@@ -179,11 +190,15 @@ def article_crawl(website: dict):
       except Exception as e:
           log.error(e, exc_info=True)
           raise
-    
+
     # DATA TO RETURN
     data['articles'] = articles
-    
-    return data
+
+    # TODO: SAVE ARTICLES INSTEAD OF RETURNING IT
+    if not data['error']:
+      save_pool(data)
+    else:
+      return data
 
 def article_crawl_pool(websites: list):
   """
@@ -220,64 +235,71 @@ def article_crawl_pool(websites: list):
   return data
 
 #---------- SAVE METHOD ----------#
-def save_thread(article_url: str, article_website_id: str):
+def save_thread(article_url: str, article_website_fqdn: str, article_website_id: str):
   articleLinksAPI = ArticleLinks(testing=False)
   save_data = {
           "website": article_website_id,
+          "fqdn": article_website_fqdn,
           "article_url": article_url
         }
-  pprint(save_data)
-  payload = articleLinksAPI.default_schema(save_data)
-  response = articleLinksAPI.add(payload)
   
-def save_pool(article_data):
+  payload = articleLinksAPI.default_schema(save_data)
+  try:
+      response = articleLinksAPI.add(payload)
+      log.debug(f"Added {article_url}")
+  except Exception as e:
+      log.debug(f"Error adding article {article_url} - {e}")
+  
+def save_pool(article_data: dict):
   """
   Thread Pool Executor method caller
   """
   websiteAPI = Website()
   
-  for data in article_data:
-    if isinstance(data['articles'], list) and data['articles']:
+  # for data in article_data:
+  if isinstance(article_data['articles'], list) and article_data['articles']:
 
-      #CALL THREAD POOL MAP FOR SAVING
-      article_website = data['website_id']
-      articles = data['articles']
+    #CALL THREAD POOL MAP FOR SAVING
+    article_website = article_data['website_id']
+    article_fqdn = article_data['fqdn']
+    articles = article_data['articles']
 
-      with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(save_thread, article, article_website) for article in articles]
+    with ThreadPoolExecutor(max_workers=2) as executor:
+      futures = [executor.submit(save_thread, article, article_fqdn, article_website) for article in articles]
 
-        for future in as_completed(futures):
-          try:
-            future.result()
-          except api.DuplicateValue as e:
-            log.error(e, exc_info=True)
-            print(e)
-            continue
-          except Exception as e:
-            log.error(e, exc_info=True)
-            raise
-      
-      #UPDATE WEBSITE IN DATABASE
-
-      date_updated = datetime.datetime.today().isoformat()
-
-      update_payload = {
-        "updated_by": "Python News Crawler"
-      }
-
-      try:
-        websiteAPI.update(update_payload, article_website)
-      except Exception as e:
-        log.error(e, exc_info=True)
-        raise ArticleCrawlerError("Error updating website")
+      for future in as_completed(futures):
+        try:
+          future.result()
+        except api.DuplicateValue as e:
+          log.error(e, exc_info=True)
+          print(e)
+          continue
+        except Exception as e:
+          log.error(e, exc_info=True)
+          raise
     
-    else:
-      try:
-        websiteAPI.update(update_payload, article_website)
-      except Exception as e:
-        log.error(e, exc_info=True)
-        raise ArticleCrawlerError("Error updating website")
+    #UPDATE WEBSITE IN DATABASE
 
+    date_updated = datetime.datetime.today().isoformat()
+
+    update_payload = {
+      "updated_by": "Python News Crawler"
+    }
+
+    try:
+      websiteAPI.update(update_payload, article_website)
+    except Exception as e:
+      log.error(e, exc_info=True)
+      raise ArticleCrawlerError("Error updating website")
+  
+  else:
+    try:
+      websiteAPI.update(update_payload, article_website)
+    except Exception as e:
+      log.error(e, exc_info=True)
+      raise ArticleCrawlerError("Error updating website")
+
+# METHOD FOR DELETION
 def save_articles(article_data: dict):
   """
   Save the scraped articles to articles database

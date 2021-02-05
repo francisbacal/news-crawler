@@ -41,7 +41,7 @@ def get_links(url: str, home_url: str=None) -> list:
 
         # GET ARTICLES FROM URL
         log.debug(f"Getting articles for {url}")
-        articles = get_articles(url, links)
+        articles = get_articles(url, home_url, links)
         
     except crawler.commonError as e:
         log.error(e, exc_info=True)
@@ -49,7 +49,7 @@ def get_links(url: str, home_url: str=None) -> list:
         data = {"sections": [], "articles": []}
         return data
 
-    except crawler.sourceError:
+    except (crawler.sourceError, crawler.pageLinksError):
         raise
 
     except Exception as e:
@@ -225,7 +225,7 @@ def get_home(website: dict, raw_website=False) -> dict:
         
         data['home_sections'] = links['sections']
         data['home_articles'] = links['articles']
-    except crawler.sourceError:
+    except (crawler.sourceError, crawler.pageLinksError):
         data['error'] = True
     except Exception as e:
         log.error(e, exc_info=True)

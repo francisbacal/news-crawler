@@ -14,3 +14,8 @@ class DuplicateValue(Exception):
   def __init__(self, data):
     self.message = f"Duplicate data found in database: {data}"
     super().__init__(self.message)
+
+class PayloadError(Exception):
+  def __init__(self, data):
+    self.message = f"Error generating payload: {data}"
+    super().__init__(self.message)
