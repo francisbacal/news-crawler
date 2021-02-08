@@ -42,7 +42,7 @@ def get_website_count(payload: dict={}, raw_website: bool=False) -> int:
     return websites
 
 def update_classify(website: dict):
-    helper = UpdateHelper(website, raw_website=True)
+    helper = UpdateHelper(website)
 
     website['for_section_update'] = helper.for_section_update
     website['for_article_update'] = helper.for_article_update
@@ -85,17 +85,19 @@ def crawl_init(websites: list):
                 for_article_update.append(result)
             else:
                 pass
-
+    
     # DEFINE NUMBER OF PROCESS
     process_count = os.cpu_count() - 1
     NUM_PROCESSES = process_count if len(websites) > process_count  else len(websites)
 
     # GET SECTIONS FOR NO SECTION WEBSITES
     if for_section_update:
+        print("Running section crawler")
         section_crawl_results = section_crawl_init(for_section_update, NUM_PROCESSES)
 
     # GET ARTICLES FOR ARTICLE ONLY PARSING
     if for_article_update:
+        print("Running article crawler")
         article_crawl_results = article_crawl_init(websites, NUM_PROCESSES)
 
     return "DONE"

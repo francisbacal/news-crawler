@@ -503,7 +503,7 @@ def section_crawl_init(websites: list, num_process: int):
 
                 #     home_sections.append(section_data)
                 #     articles.append(article_data)
-                #===================================#
+                #===================================================#
 
                 # APPEND RESULT FOR SELENIUM
                 if result_for_selenium:

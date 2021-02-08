@@ -14,27 +14,33 @@ log = init_log('WebsiteUpdate')
 ## MAIN IMPORT
 
 from newscrawler.main import get_websites, get_website_count, classify_websites, crawl_init
+from newscrawler.options import Options
 
 ##
 ##############
 
 if __name__ == '__main__':
-    
+    # INSTANTIATE OPTIONS
+    options = Options()
+
     ## QUERY TO DATABASE FOR WEBSITES
     date_checker = crawler.DateChecker()
     less_2_weeks = datetime.today() - timedelta(14)
 
     # FIRST QUERY CHECK FOR MORE THAN 2 WEEKS SINCE UPDATED
     MORE_THAN_2_WEEKS_RAW_QUERY = {
-        "country": "Singapore",
-        "created_by": "Singapore Website",
+        "country": options.country,
         "date_updated": {"$lt": less_2_weeks.isoformat()}
     }
 
     # DEFINE PARAMETERS FOR GETTING WEBSITES
-    PAYLOAD = generate_payload("Philippines")
+    PAYLOAD = generate_payload(options.country)
     LIMIT = 1
     PARAMS = {}
+
+    PAYLOAD = {
+        "_id": "601bbb887e8b804af144ea6e"
+    }
 
     while True:
         websites = get_websites(PAYLOAD, PARAMS, limit=LIMIT, raw_website=False)

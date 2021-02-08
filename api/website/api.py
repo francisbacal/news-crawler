@@ -97,7 +97,12 @@ class Website:
     else:
       url = self.url + website_id
 
-    body['date_updated'] = datetime.datetime.now().isoformat()
+    try:
+      has_date_updated_payload = True if body['date_updated'] else False
+      if has_date_updated_payload:
+        pass
+    except KeyError:
+      body['date_updated'] = datetime.datetime.now().isoformat()
 
     try:
       response = requests.put(url, data=json.dumps(body), headers=self.headers)

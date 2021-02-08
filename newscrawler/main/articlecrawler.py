@@ -36,7 +36,7 @@ def get_articles(url: str, home_url: str, src_links: type(crawler.pageLinks)=Non
 
   except (crawler.sourceError, crawler.pageLinksError) as e:
     log.error(e)
-    print(e)
+    print(f"Error in source/pageLinks{e}")
     raise
   
   except Exception as e:
@@ -105,7 +105,7 @@ def sele_crawl(website: dict):
 
       except Exception as e:
         log.error(e, exc_info=True)
-        print(e)
+        print(f"Error in {sele_crawl.__name__} - {e}")
         pass
       finally:
         browser.close()
@@ -139,7 +139,7 @@ def sele_crawl_init(websites: list):
         future.result()
       except Exception as e:
         log.error(f"Selenium Failed with message: {e}", exc_info=True)
-        print(e)
+        print(f"Selenium Failed - {e}")
         raise
       else:
         data.append(future.result())
@@ -221,10 +221,11 @@ def article_crawl_pool(websites: list):
         raise
       else:
         result = future.result()
-        if result['error']:
-            for_selenium.append(result)
-        else:
-            articles_data.append(result)
+        if result:
+          if result['error']:
+              for_selenium.append(result)
+          else:
+              articles_data.append(result)
 
   # RETURN DATA
   data = {
@@ -272,7 +273,7 @@ def save_pool(article_data: dict):
           future.result()
         except api.DuplicateValue as e:
           log.error(e, exc_info=True)
-          print(e)
+          print(f"Duplicate - {e}")
           continue
         except Exception as e:
           log.error(e, exc_info=True)
