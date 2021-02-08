@@ -6,7 +6,7 @@ from collections import OrderedDict
 from api import Website, generate_payload
 from newscrawler import Seledriver
 from datetime import datetime ,timedelta
-import newscrawler as crawler, os
+import newscrawler as crawler, os, sys
 
 log = init_log('WebsiteUpdate')
 
@@ -50,7 +50,7 @@ def extend_sys_argv(options: type(Options)=None, sys_args: list=[]):
 
 if __name__ == '__main__':
     # GET SYS ARGS AND EXTEND TO OPTIONS
-    options = extend_sys_argv(options=None, sys.argv)
+    options = extend_sys_argv(options=None, sys_args=sys.argv)
 
     ## QUERY TO DATABASE FOR WEBSITES
     date_checker = crawler.DateChecker()
