@@ -14,14 +14,43 @@ log = init_log('WebsiteUpdate')
 ## MAIN IMPORT
 
 from newscrawler.main import get_websites, get_website_count, classify_websites, crawl_init
-from newscrawler.options import Options
+from newscrawler.options import Options, extend_opt
 
 ##
 ##############
 
+def extend_sys_argv(options: type(Options)=None, sys_args: list=[]):
+    """
+    Extends sys argv to options
+        @params:    options         -   Options class from newscrawler
+        @params:    sys_args        -   sys.args list of arguments to extend to options
+    """
+    options = options or Options()
+
+    if not sys_args or len(sys_args) == 1:
+        return options
+
+    try:
+      for i in range(len(sys_args)):
+        i += 1
+        key = sys_args[i].split("=")[0]
+        val = sys_args[i].split("=")[1]
+
+        argument = {
+            key: val
+        }
+
+        options = extend_opt(options, argument)
+            
+    except (KeyError, IndexError):
+      pass
+
+
+    return options
+
 if __name__ == '__main__':
-    # INSTANTIATE OPTIONS
-    options = Options()
+    # GET SYS ARGS AND EXTEND TO OPTIONS
+    options = extend_sys_argv(options=None, sys.argv)
 
     ## QUERY TO DATABASE FOR WEBSITES
     date_checker = crawler.DateChecker()
