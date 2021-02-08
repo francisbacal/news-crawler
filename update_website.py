@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     # DEFINE PARAMETERS FOR GETTING WEBSITES
     PAYLOAD = generate_payload(options.country)
-    LIMIT = 1
+    LIMIT = options.limit
     PARAMS = {}
 
     PAYLOAD = {
