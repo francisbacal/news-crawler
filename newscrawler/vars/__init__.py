@@ -1,3 +1,6 @@
+"""
+Variables are declared here
+"""
 from .countries import *
 logs = [
   'SectionCrawler',

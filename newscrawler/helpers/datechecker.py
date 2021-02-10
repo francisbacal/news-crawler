@@ -14,6 +14,8 @@ class DateChecker:
     def is_today(self, input_date: type(datetime.datetime)) -> bool:
         """
         Checks input datetime date if is today
+            @params:
+                input_date      -   date to be checked
         """
 
         if not isinstance(input_date, datetime.datetime):
@@ -32,6 +34,9 @@ class DateChecker:
     def less_week(self, input_date: type(datetime.datetime), number_of_weeks: int=2):
         """
         Checks if input date is less than number_of_weeks
+            @params:
+                input_date          -   date to be checked
+                number_of_weeks     -   range of week to be compared to input_date
         """
         if not isinstance(input_date, datetime.datetime):
             try:
@@ -50,6 +55,8 @@ class DateChecker:
     def is_weekend(self, input_date: type(datetime.datetime)) -> bool:
         """
         Check input date if falls on a weekend [ Friday, Saturday, Sunday ]
+            @params:
+                input_date          -   date to be checked
         """
 
         if not isinstance(input_date, datetime.datetime):

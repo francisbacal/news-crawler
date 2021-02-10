@@ -13,9 +13,12 @@ log = init_log("WebsiteAPI")
 
 class Website:
   """
-    Class for website API
+    Class for website endpoint connections
   """
   def __init__(self, options=None, **kwargs):
+    """
+    Initialize method
+    """
     # self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/'
     self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/web/'
     self.options = options or Options()
@@ -23,6 +26,12 @@ class Website:
     self.existing = False
 
   def __raise_errors(self, response, url):
+    """
+    Private method to check response for errors and raise appropriate exceptions
+      @params:
+          response          -   requests response object
+          url               -   endpoint url
+    """
     if str(response.status_code).startswith('5'):
       if 'error' in response.json():
         try:
@@ -41,6 +50,11 @@ class Website:
       raise websiteAPIError(url, response.status_code)
     
   def get_one(self, site_id=None):
+    """
+    Get a single website from the database
+      @params:
+          site_id           -   String ID of website
+    """
     _id = site_id
 
     if not _id:
@@ -64,7 +78,13 @@ class Website:
       raise websiteAPIError(url, e)
   
   def get(self, body={}, params={}, **kwargs):
-    
+    """
+    Get websites from the database
+      @params:
+          body          -   Payload of query to search in database
+          params        -   additional parameters to attach to the headers
+          **kwargs      -   additional arguments to extend to options if matched
+    """
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
@@ -87,7 +107,13 @@ class Website:
       raise websiteAPIError(url, e)
 
   def update(self, body: dict={}, website_id: str=None, **kwargs):
-    
+    """
+    Update a website in the database
+      @params:
+          body            -   Payload of website details to update
+          website_id      -   String ID of website to update
+          **kwargs        -   additional arguments to extend to options if matched
+    """
     # EXTEND KWARGS TO OPTIONS IF KEY EXISTS
     self.options = extend_opt(self.options, kwargs)
 
@@ -119,6 +145,12 @@ class Website:
       raise websiteAPIError(url, f'Update Error: {e}')
 
   def counts(self, body: dict={}, **kwargs):
+    """
+    Get a count of websites based on passed details
+      @params:
+          body            -   Payload of query to search in the database
+          **kwargs        -   additional arguments to extend to options if matched
+    """
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
@@ -140,7 +172,13 @@ class Website:
       raise websiteAPIError(url, f"Count error: {e}")
 
   def add(self, data={}, raw_id: str=None, **kwargs):
-
+    """
+    Add website to the database
+      @params:
+          data            -   payload of website details to add
+          raw_id          -   id of website from raw_website database if any
+          **kwargs        -   additional arguments to extend to options if matched
+    """
     # EXTEND KWARGS TO OPTIONS IF KEY EXISTS
     self.options = extend_opt(self.options, kwargs)
 
@@ -190,7 +228,12 @@ class Website:
       raise
 
   def __generate_add_body(self, website_data: dict={}, raw_website_data: dict={}):
-
+    """
+    Generate a website schema.
+      @params:
+          website_data            -   dict object containing crawled website data
+          raw_website_data        -   dict object containing raw website data
+    """
     body = {
       "website_name": "",
       "website_icon_url": "",
@@ -235,6 +278,11 @@ class Website:
     return body
 
   def __exists(self, data: dict) -> bool:
+    """
+    Check if website already exists in database
+      @params:
+        data            -   website details
+    """
     if not data:
       raise websiteAPIError("Invalid arguments")
     
@@ -249,6 +297,11 @@ class Website:
       return False
 
   def __check(self, website_url: str):
+      """
+      Cleans and checks website url
+        @params:
+          website_url           -   website url to be checked
+      """
       if not website_url or not isinstance(website_url, str):
           raise ValueError('Invalid Parameters passed on WebsiteChecker')
       
@@ -262,6 +315,11 @@ class Website:
           
 
   def __clean_url(self, url: str):
+      """
+      Private method to clean url of website
+        @params:
+          url             -   url of website to be cleaned
+      """
       parsed_url = urlparse(url)
       tld_url = tldextract.extract(url)
 
@@ -282,7 +340,9 @@ class Website:
       self.name = self.domain.capitalize()
 
   def __check_duplicates(self):
-
+      """
+      Private method to check individual parameters of website for duplicates
+      """
       data = {
           "_id": None,
           "parameter": None
@@ -312,7 +372,11 @@ class Website:
           raise
 
   def __handle_duplicate(self, duplicate: dict):
-
+      """
+      Private method to handle duplicates of website
+        @params:
+            duplicate           -   dict object of website duplicate
+      """
       duplicate_website = self.get_one(duplicate['_id'])
 
       # CHECK FQDN

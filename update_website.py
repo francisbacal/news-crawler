@@ -22,8 +22,9 @@ from newscrawler.options import Options, extend_opt
 def extend_sys_argv(options: type(Options)=None, sys_args: list=[]):
     """
     Extends sys argv to options
-        @params:    options         -   Options class from newscrawler
-        @params:    sys_args        -   sys.args list of arguments to extend to options
+        @params:    
+            options         -   Options class from newscrawler
+            sys_args        -   sys.args list of arguments to extend to options
     """
     options = options or Options()
 
@@ -67,10 +68,6 @@ if __name__ == '__main__':
     LIMIT = options.limit
     PARAMS = {}
 
-    PAYLOAD = {
-        "_id": "601bbb887e8b804af144ea6e"
-    }
-
     while True:
         websites = get_websites(PAYLOAD, PARAMS, limit=LIMIT, raw_website=False)
         
@@ -92,5 +89,3 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e, exc_info=True)
             print(e)
-
-        break

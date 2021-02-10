@@ -4,6 +4,9 @@ from ..options import *
 
 
 class UpdateHelper(DateChecker):
+  """
+  Helper for checking and class
+  """
   def __init__(self, website: dict, **kwargs):
     super().__init__()
     self.options = Options()

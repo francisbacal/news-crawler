@@ -10,6 +10,9 @@ log = init_log("articleLinksAPI")
 
 class ArticleLinks():
     def __init__(self, options=None, **kwargs):
+        """
+        Initialize method
+        """
         self.options = options or Options()
         self.options = extend_opt(self.options, kwargs)
         self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
@@ -20,6 +23,11 @@ class ArticleLinks():
             self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article/"
 
     def default_schema(self, article_data: dict):
+        """
+        Generates a payload of article for adding
+            @params:
+                article_data        -   dict object of article details
+        """
         try:
             article_url = article_data['article_url']
             website = article_data['website']
@@ -49,21 +57,36 @@ class ArticleLinks():
         return res.json()['data']
         
     def __raise_errors(self, response, url):
+        """
+        Checks for response error and raises appropriate errors
+            @params:
+                response        -   requests response
+                url             -   Endpoint url
+        """
         if str(response.status_code).startswith('5'):
             if 'error' in response.json():
-                if response.json()['error']['code'] == 11000:
-                    raise websiteAPIError(url, 'Duplicate Value')
-                else:
-                    err_code = response.json()['error']['code']
-                    err_name = response.json()['error']['name']
-                    raise websiteAPIError(url, f"ERROR: {err_name} with code {err_code}")
+                try:
+                    if response.json()['error']['code'] == 11000:
+                        raise articleLinksAPIError(url, 'Duplicate Value')
+                    else:
+                        err_code = response.json()['error']['code']
+                        err_name = response.json()['error']['name']
+                        raise articleLinksAPIError(url, f"ERROR: {err_name} with code {err_code}")
+                except KeyError:
+                    raise articleLinksAPIError(url, "Unknown")
             else:
-                raise websiteAPIError(url, response.status_code)
+                raise articleLinksAPIError(url, response.status_code)
         
         if str(response.status_code).startswith('4'):
-            raise websiteAPIError(url, response.status_code)
+            raise articleLinksAPIError(url, response.status_code)
     
     def check_link(self, article_url: str, **kwargs):
+        """
+        Check links for duplicate article
+            @params:
+                article_url         -   url of article to check
+                **kwargs            -   additional arguments to extend to options
+        """
         url = self.url + "custom_query/"
         self.options = extend_opt(self.options, kwargs)
         params = {"limit": self.options.limit}
@@ -77,11 +100,26 @@ class ArticleLinks():
 
         try:
             response = requests.post(url, params=params, data=json.dumps(payload), headers=self.headers)
-        except expression as identifier:
-            pass
+
+            self.__raise_errors(response, url)
+
+            result = response.json()['data']
+
+            #CHECK LENGTH OF RESULT
+            if len(result) > 0:
+                raise DuplicateValue("Article already exists in the database")
+
+        except Exception as e:
+            raise articleLinksAPIError(url, e)
     
     def get(self, body={}, params={}, **kwargs):
-    
+        """
+        Get article links from the database
+            @params:
+                body            -   payload query to database
+                params          -   additional parameter to be sent to headers
+                **kwargs        -   additional parameters to extend to options
+        """
         self.options = extend_opt(self.options, kwargs)
 
         url = self.url + "custom_query"
@@ -101,27 +139,22 @@ class ArticleLinks():
             raise articleLinksAPIError(url, e)
     
     def add(self, body: dict):
+        """
+        Add new article to the database
+            @params:
+                body            -   Article payload to add to database
+        """
         url = self.url
         
         if not body or not isinstance(body, dict):
             raise ValueError("Invalid body value")
         
+        # CHECK FOR DUPLICATES
+        self.check_link(body['article_url'])
+      
         try:
             response = requests.post(url, data=json.dumps(body, default=json_util.default), headers=self.headers)
-        
-            if str(response.status_code).startswith('5'):
-
-                if 'error' in response.json():
-                    if response.json()['error']['code'] == 11000:
-                        raise DuplicateValue(body['article_url'])
-                    else:
-                        err_code = response.json()['error']['code']
-                        err_name = response.json()['error']['name']
-                        err_msg = f"An error occurred while adding article: {err_name} with code {err_code}"
-                    raise APIServerError(url, response.status_code, err_msg=err_msg)
-                else:
-                    raise APIServerError(url, response.status_code)
-            
+            self.__raise_errors(response, url)
         except:
             raise
 

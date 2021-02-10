@@ -12,7 +12,12 @@ from .updatehelper import UpdateHelper
 
 #---------- RANDOM SLEEP ----------#
 def rand_sleep(min: int=3, max: int=10):
-
+    """
+    Sleep method at random seconds
+        @params:
+            min         -   Minimum seconds
+            max         -   Max seconds
+    """
     RANDOM_SEC = random.randint(min, max)
     DIFF = random.randint(1, 2) - random.random()
 
@@ -21,6 +26,12 @@ def rand_sleep(min: int=3, max: int=10):
 
 #---------- TIME CONVERT ----------#
 def time_convert(start_time, end_time):
+    """
+    Method to determine if time is in hours, minutes or seconds
+        @params:
+            start_time          -   start time
+            end_time            -   end time
+    """
     seconds = end_time - start_time
     hours = round((seconds / 3600), 2)
     minutes = round((seconds / 60), 2)
@@ -36,6 +47,11 @@ def time_convert(start_time, end_time):
 
 #---------- EXECUTION TIME DECORATOR ----------#
 def logtime(method):
+    """
+    Decorator for logging method's execution time
+        @params:
+            method          -   method to check execution time
+    """
     log = init_log('TIME-LOG')
     def log_time(*args, **kwargs):
 
@@ -55,9 +71,9 @@ errors = {'None': None, 'list': [], 'dict': {}, 'article_error': 'Error'}
 def catch(default, func, handle=lambda e: e, *args, **kwargs):
     """
     Catching errors
-    @params
-        default   - Required    : key values on error dict - 'None', 'list', 'dict' (String)
-        func      - Required    : lambda handle (Lambda Function)
+        @params:
+            default   - Required    : key values on error dict - 'None', 'list', 'dict' (String)
+            func      - Required    : lambda handle (Lambda Function)
     """
     log = init_log(func.__name__)
     try:
@@ -93,7 +109,8 @@ def list_split(input_list: list, number_of_split: int) -> list:
 def get_path_type(path: str, clf: type(sklearn)) -> str:
     """
     Get type/category of url path. Returns a type/category of string type
-        @params:      path         -     path of parsed url
+        @params:      
+            path         -     path of parsed url
     """
     category = 'section'
     modelData = ModelData(category)
