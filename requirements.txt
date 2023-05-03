@@ -1,0 +1,10 @@
+pandas
+tldextract
+beautifulsoup4
+cloudscraper
+pytest
+sklearn
+selenium
+pymongo
+fake-useragent
+langdetect
