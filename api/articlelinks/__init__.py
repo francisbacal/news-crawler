@@ -3,7 +3,7 @@ from ..exceptions import articleLinksAPIError, DuplicateValue
 from bson import json_util
 from pprint import pprint
 
-import requests, json, datetime
+import requests, json, datetime, os
 
 log = init_log("articleLinksAPI")
 
@@ -18,9 +18,9 @@ class ArticleLinks():
         self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
 
         if self.options.testing:
-            self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article-test/"
+            self.url = os.environ['ARTICLE_TEST_EP']
         else:
-            self.url = "http://192.168.3.143:4040/mmi-endpoints/v0/article/"
+            self.url = os.environ['ARTICLE_EP']
 
     def default_schema(self, article_data: dict):
         """
@@ -50,7 +50,7 @@ class ArticleLinks():
         return schema
             
     def delete_test(self, _id):
-        url = f"http://192.168.3.143:4040/mmi-endpoints/v0/article-test/{_id}"
+        url = f"{os.environ['ARTICLE_TEST_EP']}{_id}"
 
         res = requests.delete(url,headers=self.headers)
 

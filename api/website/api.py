@@ -4,7 +4,7 @@ from bson import json_util
 from langdetect import detect
 from bs4 import BeautifulSoup
 from pprint import pprint
-import requests,json,datetime, cloudscraper, copy, tldextract
+import requests,json,datetime, cloudscraper, copy, tldextract,os
 
 from urllib.parse import urlparse
 
@@ -19,8 +19,8 @@ class Website:
     """
     Initialize method
     """
-    # self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/'
-    self.url = 'http://192.168.3.143:4040/mmi-endpoints/v0/web/'
+    # self.url = os.environ['RAW_WEBSITE_EP']
+    self.url = os.environ['WEBSITE_EP']
     self.options = options or Options()
     self.headers = {"Content-Type" : "application/json", "Authorization": self.options.token}
     self.existing = False
@@ -88,7 +88,7 @@ class Website:
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
-      url = "http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/query"
+      url = os.environ['RAW_WEBSITE_QUERY_EP']
     else:
       url = self.url + "custom_query"
 
@@ -118,7 +118,7 @@ class Website:
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
-      url = f"http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/{website_id}"
+      url = f"{os.environ['RAW_WEBSITE_EP']}{website_id}"
       body['created_by'] = "Singapore Website Done"
     else:
       url = self.url + website_id
@@ -154,7 +154,7 @@ class Website:
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
-      url = "http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/count"
+      url = f"{os.environ['RAW_WEBSITE_EP']}count"
     else:
       url = self.url + "count"
 
@@ -183,7 +183,7 @@ class Website:
     self.options = extend_opt(self.options, kwargs)
 
     if self.options.raw_website:
-      url = "http://192.168.3.143:4040/mmi-endpoints/v0/raw-website/query"
+      url = f"{os.environ['RAW_WEBSITE_EP']}query"
     else:
       url = self.url + "custom_query"
 
